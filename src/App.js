@@ -1,12 +1,15 @@
 import './App.css';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
+
+import { InputGroup, FormControl, Button } from 'react-bootstrap';
+import Card from 'react-bootstrap/Card';
+import Form from 'react-bootstrap/Form';
+
 import data from './data.json';
 import {search, get_children} from './search';
 import {shorten} from './util';
-import Form from 'react-bootstrap/Form';
-import Card from 'react-bootstrap/Card';
-import { InputGroup, FormControl, Button } from 'react-bootstrap';
-import * as Plot from "@observablehq/plot";
+import { get_closest_index } from './handleData';
+import { CPITimeline, BarChart } from './charts';
 
 function SearchInput(props) {
   return (
@@ -34,10 +37,9 @@ function BreadCrumb(props) {
 
   // In case this is the top category, no breadcrumb is needed
   if (props.coicop === '0') {
-    return (<div className='breadcrumb'></div>);
+    return (<div></div>);
   }
   
-  const current = data.products[props.coicop];
   var breadcrumb = [];
   for (var i = props.coicop.length-1; i > 1; i--) {
     breadcrumb.push(data.products[props.coicop.slice(0, i)]);
@@ -46,7 +48,7 @@ function BreadCrumb(props) {
 
   const parent = breadcrumb[0];
   return (
-    <div className='breadcrumb'>
+    <div>
       Hierarchie:
       {(breadcrumb.length > 1) && " ... ›"}
       &nbsp;
@@ -60,38 +62,39 @@ function BreadCrumb(props) {
   )
 }
 
-function CPITimeline(props) {
 
-  const chartRef = useRef();
 
-  useEffect(() => {
-    const timescale = data.timescales[data.products[props.coicop].timescale];
-    const values = data.products[props.coicop].CPI.map((cpi, i) => ({'cpi': cpi, 'date': timescale[i]}));
-    
-    const width = chartRef.current.previousSibling.clientWidth;
-    const chart = Plot.plot({
-      height: Math.min(width*0.7, 400),
-      width: width,
-      style: {
-        fontSize: '14px',
-      },
-      marks: [
-        Plot.line(values, {
-          x: "date", 
-          y: "cpi",
-          stroke: "steelblue",
-          strokeWidth: 2,
-        })
-      ],
-      x: {type: "time", format: "%Y-%m-%d"},
-      y: {label: null, grid: true},
-    });
-    chartRef.current.append(chart);
-    return () => chart.remove();
-  });
+// Shows the evolution of EBM data for a given COICOP code
+function EBMSummary(props) {
+
+  let absolute_consumption = [];
+  let relative_consumption = [];
+  let normaliser = 0;
+
+  for (let year of [2012, 2014, 2016, 2018, 2020]) {
+    if (props.coicop in data.spendings[year]) {
+
+      const cpi = get_closest_index(props.coicop, `${year}-06`);
+      absolute_consumption.push({x: year, y: data.spendings[year][props.coicop]['abs']/cpi});
+      if (normaliser === 0) {
+        normaliser = absolute_consumption[absolute_consumption.length-1].y;
+      }
+      absolute_consumption[absolute_consumption.length-1].y /= normaliser;
+
+      relative_consumption.push({x: year, y: data.spendings[year][props.coicop]['rel']});
+    }
+  }
 
   return (
-    <div className='CPITimeline' ref={chartRef}>
+    <div className='EBMSummary row row-cols-1 row-cols-sm-2'>
+      <div className='col'>
+        <h4>Evolution de la consommation réelle</h4>
+        <BarChart data={absolute_consumption} x={{label: null}} y={{label: null, grid: true, percent: true}} />
+      </div>
+      <div className='col'>
+        <h4>Part dans le budget annuel</h4>
+        <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
+      </div>
     </div>
   )
 }
@@ -140,33 +143,59 @@ function SearchResult(props) {
 
   const cat = data.products[props.result.coicop];
 
-  let className = 'mb-2';
   if (opened) {
-    className += ' opened';
+    return (
+      <Card className='opened mb-2'>
+        <Card.Header><BreadCrumb coicop={props.result.coicop} setCOICOP={props.setCOICOP} /></Card.Header>
+        <Card.Body>
+          <h2>{cat.name}</h2>
+          <CPITimeline coicop={props.result.coicop}/>
+          <EBMSummary coicop={props.result.coicop} />
+          <SubProducts coicop={props.result.coicop} setCOICOP={props.setCOICOP} />
+        </Card.Body>
+      </Card>
+    )
   } else {
-    className += ' closed';
+    return (
+      <Card className='closed mb-2'>
+        <Card.Body onClick={props.open}>
+          <h3 className='mb-0'>{cat.name}</h3>
+        </Card.Body>
+      </Card>
+    )
   }
-
-  return (
-    <Card className={className}>
-      <Card.Body onClick={open}>
-        {opened && <BreadCrumb coicop={props.result.coicop} setCOICOP={props.setCOICOP} />}
-        <Card.Title>{cat.name}</Card.Title>
-        {opened && <CPITimeline coicop={props.result.coicop}/>}
-        {opened && <SubProducts coicop={props.result.coicop} setCOICOP={props.setCOICOP} />}
-      </Card.Body>
-    </Card>
-  )
 }
 
 function SearchResults(props) {
+
+  // The opened_results state contains the IDs of the results that are currently opened
+  const [opened_results, set_opened_results] = useState([0]);
+
+  const first_result = props.results.length ? props.results[0].coicop : null;
+
+  useEffect(() => {
+    set_opened_results([0]);
+  }, [first_result]);
+
+  const open_result = (id) => {
+    if (opened_results.indexOf(id) === -1) {
+      set_opened_results([...opened_results, id]);
+    }
+  }
+
   return (
     <div className='searchResults'>
       <span className='text-muted'>
         {props.results.length} résultats parmi {Object.keys(data.products).length} catégories
       </span>
       {props.results.map((result, i) => (
-        <SearchResult key={result.coicop} result={result} setCOICOP={props.setCOICOP} opened={i == 0} count={i} />
+        <SearchResult 
+          key={result.coicop} 
+          result={result} 
+          setCOICOP={props.setCOICOP} 
+          opened={opened_results.includes(i)} 
+          open={() => open_result(i)}
+          count={i} />
       ))}
     </div>
   )
