@@ -4,6 +4,9 @@ import React, {useEffect, useState} from 'react';
 import { InputGroup, FormControl, Button } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
+import Popover from 'react-bootstrap/Popover'
+import Badge from 'react-bootstrap/Badge'
 
 import data from './data.json';
 import {search, get_children} from './search';
@@ -85,15 +88,36 @@ function EBMSummary(props) {
     }
   }
 
+  const consommation_reelle_helper = (
+    <Popover id="popover-basic">
+      <Popover.Body>
+        La consommation "réelle" est calculée en tenant compte des montants moyens dépensés par les ménages, et de l'évolution de l'indice de prix pour ce produit.
+        Si les montants dépensés pour un produit évolue au même rythme que l'indice des prix, la consommation réelle apparaitra stable.
+        Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmente aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable
+        Si les montants dépensés augmentent plus vite que l'indice des prix, on considère que la consommation réelle a augmenté, et à l'inverse qu'elle a diminué si les montants augmentent moins vite que les prix.
+      </Popover.Body>
+    </Popover>
+  );
+
   return (
-    <div className='EBMSummary row row-cols-1 row-cols-sm-2'>
-      <div className='col'>
-        <h4>Evolution de la consommation réelle</h4>
-        <BarChart data={absolute_consumption} x={{label: null}} y={{label: null, grid: true, percent: true}} />
-      </div>
-      <div className='col'>
-        <h4>Part dans le budget annuel</h4>
-        <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
+    <div className='my-5'>
+      <h3>
+        Evolution de la consommation
+      </h3>
+      <div className='row row-cols-1 row-cols-sm-2'>
+        <div className='col'>
+          <h4 className='d-flex justify-content-between align-items-start"'>
+            Evolution de la consommation réelle
+            <OverlayTrigger trigger="click" placement="auto" overlay={consommation_reelle_helper}>
+              <span className='small fs-6 ml-2'><Badge pill bg="secondary">?</Badge></span>
+            </OverlayTrigger>
+          </h4>
+          <BarChart data={absolute_consumption} x={{label: null}} y={{label: null, grid: true, percent: true}} />
+        </div>
+        <div className='col'>
+          <h4>Part dans le budget annuel</h4>
+          <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
+        </div>
       </div>
     </div>
   )

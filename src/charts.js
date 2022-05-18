@@ -11,7 +11,15 @@ function CPITimeline(props) {
   
     useEffect(() => {
       const timescale = data.timescales[data.products[props.coicop].timescale];
-      const values = data.products[props.coicop].CPI.map((cpi, i) => ({'cpi': cpi, 'date': timescale[i]}));
+
+      let norm = data.products[props.coicop].CPI[0];
+      if (timescale[0] != '2012-01-01') {
+        let months_since_2013 = (parseInt(timescale[0].split('-')[0]) - 2013) * 12 + parseInt(timescale[0].split('-')[1]) - 6;
+        norm = 100 - (norm - 100) / months_since_2013 * 18;
+      }
+
+      const values = data.products[props.coicop].CPI.map((cpi, i) => ({'cpi': cpi/norm*100, 'date': timescale[i]}));
+      const max_value = Math.max(...values.map(v => v.cpi));
       
       const width = chartRef.current.clientWidth;
 
@@ -30,15 +38,18 @@ function CPITimeline(props) {
           })
         ],
         x: {type: "time", format: "%Y-%m-%d", domain: ['2011-06-01', '2022-05-31']},
-        y: {label: null, grid: true},
+        y: {label: null, grid: true, domain: [0, max_value]},
       });
       chartRef.current.append(chart);
       return () => chart.remove();
     });
   
     return (
-      <div className='chart' ref={chartRef}>
-      </div>
+      <>
+        <h3>Evolution de l'indice de prix</h3>
+        <div className='chart' ref={chartRef}>
+        </div>
+      </>
     )
   }
 
