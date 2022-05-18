@@ -47,7 +47,6 @@ function make_index(docs) {
  */
 function custom_search(query, index) {
   const query_tokens = tokenize(query);
-  console.log(query_tokens);
   let matches = [];
   for (let token of query_tokens) {
     for (let index_token in index) {
