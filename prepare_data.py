@@ -2,11 +2,12 @@ import pandas as pd
 import json
 import re
 import math
+from unidecode import unidecode
 
 STATBEL_FOLDER = '../../données statbel/'
 START_DATE = pd.to_datetime('2012-01-01')
 
-round_to_n = lambda x, n: round(x, -int(math.floor(math.log10(x))) + (n - 1))
+round_to_n = lambda x, n: 0 if x == 0 else round(x, -int(math.floor(math.log10(x))) + (n - 1))
 
 DATA = {}
 
@@ -71,7 +72,48 @@ DATA['timescales'] = timescales
 
 print('Add EBM data...')
 
-def get_main_file_and_sheet(year):
+groupings = {
+    "total": "Tab01",
+    "quartile de revenus": "Tab03_QRT",
+    # "nombre de personnes âgées (65+) dans le ménage": "TAB04",
+    # "nombre d'actifs dans le ménage": "TAB05",
+    "présence d'enfant(s) (<16 ans) dans le ménage": "TAB06",
+    "statut propriétaire-locataire de la personne de référence": "TAB07",
+    # "âge de la personne de référence": "TAB08",
+    # "type de ménage eurostat": "TAB09",
+    # "type de ménage": "TAB10",
+    "taille du ménage": "TAB11",
+    # "statut social de la personne de référence du ménage": "TAB12",
+    # "âge de la personne la plus âgée": "TAB13",
+}
+
+tab2group = {v.replace('_QRT', ''): k for k, v in groupings.items()}
+
+def find_closest_grouping(approx_grouping_name):
+    tokens = unidecode(approx_grouping_name.lower()).split(' ')
+    matches = []
+    for g in groupings:
+        match = True
+        g_tokens = re.split("( |-|')", unidecode(g))
+        for t in tokens:
+            if t not in g_tokens:
+                match = False
+                break
+        if match:
+            matches.append(g)
+    
+    if not matches:
+        raise Exception('No match')
+    
+    if len(matches) > 1:
+        for i, m in enumerate(matches):
+            print(f'{i}: {m}')
+        key = int(input('Choose group among matches: '))
+        matches = [matches[key]]
+    
+    return matches[0]
+
+def get_file_and_sheet(year, group, region='BE'):
     if year == 2020:
         file = STATBEL_FOLDER+'EBM/EBM_0113_2020_FR_07SEP21.XLSX'
     elif year == 2018:
@@ -81,32 +123,104 @@ def get_main_file_and_sheet(year):
     else:
         raise ValueError(f'No data available for year {year}')
     
-    sheet = f'HBS_Tab01_BE_{year}'
+    tab = groupings[group] if group in groupings else groupings[find_closest_grouping(group)]
+    if region not in ['FL', 'VL', 'BE', 'BXL', 'WAL']:
+        raise ValueError(f'Invalid region {region}')
+    if region in ['FL', 'VL']:
+        region = 'FL' if tab.startswith('Tab') else 'VL'
+
+    sheet = f'HBS_{tab}_{region}_{year}'
 
     return file, sheet
 
-def get_main_data(year):
-    file, sheet = get_main_file_and_sheet(year)
-    df = pd.read_excel(file, sheet_name=sheet, skiprows=3)
-    df = df.rename(columns={'Unnamed: 0': 'COICOP', 'Unnamed: 1': 'Libellés'}).drop(0).dropna(subset=['Libellés'])
-    df['level'] = df['COICOP'].str.len()
+COL_NAME = 'Dépenses moyennes par ménage'
 
-    return df
+def get_sheet_info(file, sheet):
+    df = pd.read_excel(file, sheet_name=sheet, nrows=7, header=None)
+    info = {
+        'file': file,
+        'sheet': sheet,
+        'title': df.loc[0,0],
+        'area': df.loc[1, 0].split(' - ')[0],
+        'year': df.loc[1, 0].split(' - ')[2],
+        'groups': {},
+        'grouping': tab2group[sheet.split('_')[1]]
+    }
+
+    if df.loc[6, 0] == 'COICOP':
+        info['start_of_data'] = 7
+    elif df.loc[5, 0] == 'COICOP':
+        info['start_of_data'] = 6
+    elif df.loc[4, 0] == 'COICOP':
+        info['start_of_data'] = 5
+        assert(sheet.startswith('HBS_Tab01'))
+    else:
+        raise Exception('Could not parse data correctly')
+    
+    
+    # get groups
+    # Tab01 sheets are a special case: there are no groups
+    if info['start_of_data'] == 5:
+        group_row = 2
+        groups = [(2, 'total')]
+    else:
+        group_row = info['start_of_data'] - 3
+        groups = list(df.loc[group_row][df.loc[group_row].notnull()].to_dict().items())
+    for i in range(1 if len(groups) > 1 else 0, len(groups)):
+        group = groups[i][1]
+        info['groups'][group] = {}
+        col_id = groups[i][0]
+        max_col = groups[i+1][0]-1 if len(groups) > i+1 else df.columns.max()
+        while col_id <= max_col:
+            info['groups'][group][
+                df.loc[group_row+1, col_id].replace('Dépenses moyennes par ménage et par an (€)', COL_NAME).replace('Dépenses moyennes pour la totalité des ménages (par an en euros)', COL_NAME)
+            ] = col_id
+            col_id += 1
+
+
+
+    return info
+
+def get_data(sheet_info):
+    groups = {}
+    for group, cols in sheet_info['groups'].items():
+        df = pd.read_excel(file, sheet_name=sheet, skiprows=sheet_info['start_of_data'], header=None).dropna(subset=[1])
+        cols_renaming = {v: k for k, v in cols.items()}
+        cols_renaming = {**{0: 'COICOP', 1: 'Libellés'}, **cols_renaming}
+        df = df.loc[:, cols_renaming.keys()].rename(columns=cols_renaming)
+        df['level'] = df['COICOP'].str.len()
+        for col in cols:
+            df[col] = df[col].apply(lambda x: 0 if x == '-' else x)
+        groups[group] = df.copy()
+    
+    return groups
 
 def percent_and_abs(df):
-    COL_PP = 'Dépenses moyennes par personne et par an (€)'
-    all = df[['COICOP', COL_PP]].rename(columns={COL_PP: 'abs'}).set_index('COICOP').to_dict(orient='index')
+    all = df[['COICOP', COL_NAME]].rename(columns={COL_NAME: 'abs'}).set_index('COICOP').to_dict(orient='index')
     tot = all['0']['abs']
     for k in all:
         all[k]['rel'] = round_to_n(all[k]['abs'] / tot, 3)
         all[k]['abs'] = round_to_n(all[k]['abs'], 3)
     return all
 
-spendings = {}
+spendings = []
 
 for year in range(2012, 2022, 2):
-    s = percent_and_abs(get_main_data(year))
-    spendings[year] = {k: v for k, v in s.items() if k in DATA['products']}
+    for region in ['BE', 'BXL', 'WAL', 'FL']:
+        print(f'Region {region}, year {year}...')
+        for grouping in groupings:
+            file, sheet = get_file_and_sheet(year, grouping, region)
+            sheet_info = get_sheet_info(file, sheet)
+            groups = get_data(sheet_info)
+            for group, df in groups.items():
+                s = percent_and_abs(df)
+                spendings.append({
+                    'year': year,
+                    'region': region,
+                    'grouping': grouping,
+                    'group': group,
+                    'spendings': {k: v for k, v in s.items() if k in DATA['products']}
+                })
 
 DATA['spendings'] = spendings
 

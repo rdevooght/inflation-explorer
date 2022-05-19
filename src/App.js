@@ -7,11 +7,14 @@ import Form from 'react-bootstrap/Form';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Popover from 'react-bootstrap/Popover'
 import Badge from 'react-bootstrap/Badge'
+import FloatingLabel from 'react-bootstrap/FloatingLabel'
+import Row from 'react-bootstrap/Row'
+import Col from 'react-bootstrap/Col'
 
 import data from './data.json';
 import {search, get_children} from './search';
 import {shorten} from './util';
-import { get_closest_index } from './handleData';
+import { get_closest_index, get_spendings, groupings_options } from './handleData';
 import { CPITimeline, BarChart } from './charts';
 
 function SearchInput(props) {
@@ -65,26 +68,69 @@ function BreadCrumb(props) {
   )
 }
 
+function RegionSelector(props) {
+
+  const regions = {
+    BE: 'Belgique',
+    BXL: 'Bruxelles',
+    FL: 'Flandre',
+    WAL: 'Wallonie',
+  };
+
+
+  return (
+    <FloatingLabel label="Région / zone géographique">
+      <Form.Select value={props.region} onChange={e => props.onChange(e.target.value)}>
+        {Object.keys(regions).map(region => (
+          <option key={region} value={region}>{regions[region]}</option>
+        ))}
+      </Form.Select>
+    </FloatingLabel>
+  )
+}
+
+function GroupSelector(props) {
+
+  
+  
+  return (
+    <FloatingLabel label="Groupe">
+      <Form.Select value={props.value[0]+'_'+props.value[1]} onChange={e => props.onChange(e.target.value.split('_'))}>
+        {Object.keys(groupings_options).map(grouping => (
+          <optgroup key={grouping} label={grouping}>
+            {groupings_options[grouping].map(group => (
+              <option key={grouping+'_'+group} value={grouping+'_'+group}>{group}</option>
+            ))}
+          </optgroup>
+        ))}
+      </Form.Select>
+    </FloatingLabel>
+  )
+}
 
 
 // Shows the evolution of EBM data for a given COICOP code
 function EBMSummary(props) {
 
+  let [group, setGroup] = useState(['total', 'total']);
+  let [region, setRegion] = useState('BE');
+  
   let absolute_consumption = [];
   let relative_consumption = [];
   let normaliser = 0;
 
   for (let year of [2012, 2014, 2016, 2018, 2020]) {
-    if (props.coicop in data.spendings[year]) {
+    let spendings = get_spendings(props.coicop, year, region, group[0], group[1]);
+    if (spendings !== undefined) {
 
       const cpi = get_closest_index(props.coicop, `${year}-06`);
-      absolute_consumption.push({x: year, y: data.spendings[year][props.coicop]['abs']/cpi});
+      absolute_consumption.push({x: year, y: spendings['abs']/cpi});
       if (normaliser === 0) {
         normaliser = absolute_consumption[absolute_consumption.length-1].y;
       }
       absolute_consumption[absolute_consumption.length-1].y /= normaliser;
 
-      relative_consumption.push({x: year, y: data.spendings[year][props.coicop]['rel']});
+      relative_consumption.push({x: year, y: spendings['rel']});
     }
   }
 
@@ -104,6 +150,14 @@ function EBMSummary(props) {
       <h3>
         Evolution de la consommation
       </h3>
+      <Row className='my-2'>
+        <Col>
+          <GroupSelector value={group} onChange={setGroup}/>
+        </Col>
+        <Col>
+          <RegionSelector value={region} onChange={setRegion}/>
+        </Col>
+      </Row>
       <div className='row row-cols-1 row-cols-sm-2'>
         <div className='col'>
           <h4 className='d-flex justify-content-between align-items-start"'>

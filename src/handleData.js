@@ -42,4 +42,24 @@ function get_closest_index(coicop, date) {
 
 }
 
-export {get_closest_index};
+function get_spendings(coicop, year, region, grouping, group) {
+  for (let s of data.spendings) {
+    if (s.year === year && s.region === region && s.grouping === grouping && s.group === group) {
+      return s['spendings'][coicop];
+    }
+  }
+
+  return undefined;
+}
+
+// Identify existing grouping options
+let groupings_options = {};
+for (let s of data.spendings) {
+  if (groupings_options[s.grouping] === undefined) {
+    groupings_options[s.grouping] = [s.group];
+  } else if (!groupings_options[s.grouping].includes(s.group)) {
+    groupings_options[s.grouping].push(s.group);
+  }
+}
+
+export {get_closest_index, get_spendings, groupings_options};
