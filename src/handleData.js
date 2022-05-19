@@ -8,7 +8,7 @@ import data from './data.json';
  * @param {String} date string in the format YYYY-MM-DD, YYYY-MM, or YYYY. 
  * YYYY will be extended to YYYY-01-01 and YYYY-MM-DD will be replaced by YYYY-MM-01
  */
-function get_closest_index(coicop, date) {
+function get_closest_index(coicop, date, return_date=false) {
   if (data.products[coicop] === undefined) {
     throw new Error(`Unknown COICOP code: ${coicop}`);
   }
@@ -38,7 +38,11 @@ function get_closest_index(coicop, date) {
     throw new Error(`Cannot handle date: ${date}`);
   }
   
-  return data.products[coicop].CPI[index];
+  if (return_date) {
+    return [data.products[coicop].CPI[index], dates[index]];
+  } else {
+    return data.products[coicop].CPI[index];
+  }
 
 }
 

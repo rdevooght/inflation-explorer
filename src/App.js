@@ -4,12 +4,15 @@ import React, {useEffect, useState} from 'react';
 import { InputGroup, FormControl, Button } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
-import Popover from 'react-bootstrap/Popover'
-import Badge from 'react-bootstrap/Badge'
-import FloatingLabel from 'react-bootstrap/FloatingLabel'
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Popover from 'react-bootstrap/Popover';
+import Badge from 'react-bootstrap/Badge';
+import FloatingLabel from 'react-bootstrap/FloatingLabel';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr'; 
 
 import data from './data.json';
 import {search, get_children} from './search';
@@ -79,7 +82,7 @@ function RegionSelector(props) {
 
 
   return (
-    <FloatingLabel label="Région / zone géographique">
+    <FloatingLabel label="Région">
       <Form.Select value={props.region} onChange={e => props.onChange(e.target.value)}>
         {Object.keys(regions).map(region => (
           <option key={region} value={region}>{regions[region]}</option>
@@ -200,6 +203,25 @@ function SubProducts(props) {
   )
 }
 
+function CPITextSummary(props) {
+  const today = dayjs();
+  const [most_recent_CPI, most_recent_date] = get_closest_index(props.coicop, today.format('YYYY-MM'), true);
+  const base_date = dayjs(most_recent_date);
+  const [previous_year_CPI, previous_year_date] = get_closest_index(props.coicop, base_date.subtract(1, 'year').format('YYYY-MM'), true);
+  const [previous_decade_CPI, previous_decade_date] = get_closest_index(props.coicop, base_date.subtract(10, 'year').format('YYYY-MM'), true);
+
+  const year_ev = (most_recent_CPI - previous_year_CPI) / previous_year_CPI;
+  const decade_ev = (most_recent_CPI - previous_decade_CPI) / previous_decade_CPI;
+
+  return (
+    <p className='my-3'>
+      En {base_date.locale('fr').format('MMMM YYYY')}, 
+      le prix du produit est {Math.abs(year_ev*100).toFixed(1)}% {(year_ev > 0) ? 'plus' : 'moins'} élevé qu'un an plus tôt,
+      et {Math.abs(decade_ev*100).toFixed(1)}% {(year_ev > 0) ? 'plus' : 'moins'} élevé que {base_date.year() - dayjs(previous_decade_date).year()} ans plus tôt.
+    </p>
+  )
+}
+
 function SearchResult(props) {
   const [opened, setOpened] = useState(false);
 
@@ -228,6 +250,7 @@ function SearchResult(props) {
         <Card.Body>
           <h2>{cat.name}</h2>
           <CPITimeline coicop={props.result.coicop}/>
+          <CPITextSummary coicop={props.result.coicop}/>
           <EBMSummary coicop={props.result.coicop} />
           <SubProducts coicop={props.result.coicop} setCOICOP={props.setCOICOP} />
         </Card.Body>
