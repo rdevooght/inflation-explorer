@@ -22,7 +22,7 @@ import { CPITimeline, BarChart } from './charts';
 
 function SearchInput(props) {
   return (
-    <Form className='mb-2'>
+    <Form className='mb-2' onSubmit={e => { e.preventDefault(); }}>
       <Form.Group>
         <InputGroup>
           <FormControl 

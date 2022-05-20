@@ -1,5 +1,6 @@
 {
   "name": "search",
+  "homepage": "https://blog.robindevooght.be/posts/search-inflation/",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
