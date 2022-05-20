@@ -56,7 +56,7 @@ function BreadCrumb(props) {
   breadcrumb.push(data.products["0"]);
 
   const parent = breadcrumb[0];
-  return (
+  /*return (
     <div>
       Hierarchie:
       {(breadcrumb.length > 1) && " ... ›"}
@@ -67,6 +67,22 @@ function BreadCrumb(props) {
         title={parent.name}
       >{shorten(parent.name, 24)}</a>
       &nbsp; &rsaquo;
+    </div>
+  )*/
+
+  return (
+    <div>
+      {breadcrumb.reverse().map(d => (
+        <>
+          <a 
+            key={d.coicop}
+            href={`#${d.coicop}`} 
+            onClick={() => props.setCOICOP(d.coicop)}
+            title={d.name}
+          >{shorten(d.name, 24)}</a>
+          &nbsp; &rsaquo; &nbsp; 
+        </>
+      ))}
     </div>
   )
 }
@@ -102,7 +118,7 @@ function GroupSelector(props) {
         {Object.keys(groupings_options).map(grouping => (
           <optgroup key={grouping} label={grouping}>
             {groupings_options[grouping].map(group => (
-              <option key={grouping+'_'+group} value={grouping+'_'+group}>{group}</option>
+              <option key={grouping+'_'+group} value={grouping+'_'+group}>{(group === 'total') ? 'Toute la population' : group}</option>
             ))}
           </optgroup>
         ))}
@@ -127,13 +143,13 @@ function EBMSummary(props) {
     if (spendings !== undefined) {
 
       const cpi = get_closest_index(props.coicop, `${year}-06`);
-      absolute_consumption.push({x: year, y: spendings['abs']/cpi});
+      absolute_consumption.push({x: year, y: spendings[0]/cpi});
       if (normaliser === 0) {
         normaliser = absolute_consumption[absolute_consumption.length-1].y;
       }
       absolute_consumption[absolute_consumption.length-1].y /= normaliser;
 
-      relative_consumption.push({x: year, y: spendings['rel']});
+      relative_consumption.push({x: year, y: spendings[1]});
     }
   }
 

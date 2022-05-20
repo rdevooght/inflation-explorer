@@ -37,17 +37,18 @@ function CPITimeline(props) {
           Plot.line(values, {
             x: "date", 
             y: "cpi",
-            z: null,
-            stroke: "deviation",
+            // z: null,
+            // stroke: "deviation",
+            stroke: "steelblue",
             strokeWidth: 2,
           })
         ],
-        color: {
+        /*color: {
           type: "categorical",
           domain: [-1, 0, 1],
           range: ["#00ff00", "#0000ff", "#ff0000"], 
           legend: false,
-        },
+        },*/
         x: {type: "time", format: "%Y-%m-%d", domain: ['2011-06-01', '2022-05-31']},
         y: {label: null, grid: true, domain: [0, max_value]},
       });

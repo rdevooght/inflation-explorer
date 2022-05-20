@@ -1,7 +1,9 @@
+from locale import normalize
 import pandas as pd
 import json
 import re
 import math
+import os
 from unidecode import unidecode
 
 STATBEL_FOLDER = '../../données statbel/'
@@ -80,9 +82,9 @@ groupings = {
     "présence d'enfant(s) (<16 ans) dans le ménage": "TAB06",
     "statut propriétaire-locataire de la personne de référence": "TAB07",
     # "âge de la personne de référence": "TAB08",
-    # "type de ménage eurostat": "TAB09",
+    "type de ménage eurostat": "TAB09",
     # "type de ménage": "TAB10",
-    "taille du ménage": "TAB11",
+    # "taille du ménage": "TAB11",
     # "statut social de la personne de référence du ménage": "TAB12",
     # "âge de la personne la plus âgée": "TAB13",
 }
@@ -136,6 +138,15 @@ def get_file_and_sheet(year, group, region='BE'):
 COL_NAME = 'Dépenses moyennes par ménage'
 
 def get_sheet_info(file, sheet):
+
+    # Check if the file info is already saved in a json file
+    sheet_info_file = STATBEL_FOLDER+'EBM/as_csv/'+sheet+'/info.json'
+    if os.path.exists(sheet_info_file):
+        with open(sheet_info_file, 'r') as f:
+            info = json.load(f)
+        return info
+
+
     df = pd.read_excel(file, sheet_name=sheet, nrows=7, header=None)
     info = {
         'file': file,
@@ -177,20 +188,36 @@ def get_sheet_info(file, sheet):
             ] = col_id
             col_id += 1
 
-
+    # Save info
+    if not os.path.exists(STATBEL_FOLDER+'EBM/as_csv/'+sheet):
+        os.makedirs(STATBEL_FOLDER+'EBM/as_csv/'+sheet)
+        with open(sheet_info_file, 'w') as f:
+            json.dump(info, f)
 
     return info
 
 def get_data(sheet_info):
+
     groups = {}
     for group, cols in sheet_info['groups'].items():
-        df = pd.read_excel(file, sheet_name=sheet, skiprows=sheet_info['start_of_data'], header=None).dropna(subset=[1])
-        cols_renaming = {v: k for k, v in cols.items()}
-        cols_renaming = {**{0: 'COICOP', 1: 'Libellés'}, **cols_renaming}
-        df = df.loc[:, cols_renaming.keys()].rename(columns=cols_renaming)
-        df['level'] = df['COICOP'].str.len()
-        for col in cols:
-            df[col] = df[col].apply(lambda x: 0 if x == '-' else x)
+
+        # Check if the data is already saved in a csv file
+        normalized_group_name = re.sub('[^a-z0-9_]', '', unidecode(group).lower().replace(' ', '_'))
+        data_file = STATBEL_FOLDER+'EBM/as_csv/'+sheet_info['sheet']+'/'+normalized_group_name+'.csv'
+        if os.path.exists(data_file):
+            df = pd.read_csv(data_file, converters={'COICOP': lambda x: str(x)})
+        else:
+            df = pd.read_excel(file, sheet_name=sheet, skiprows=sheet_info['start_of_data'], header=None).dropna(subset=[1])
+            cols_renaming = {v: k for k, v in cols.items()}
+            cols_renaming = {**{0: 'COICOP', 1: 'Libellés'}, **cols_renaming}
+            df = df.loc[:, cols_renaming.keys()].rename(columns=cols_renaming)
+            df['level'] = df['COICOP'].str.len()
+            for col in cols:
+                df[col] = df[col].apply(lambda x: 0 if x == '-' else x)
+
+            # Save data
+            df.to_csv(data_file, index=False)
+
         groups[group] = df.copy()
     
     return groups
@@ -201,6 +228,7 @@ def percent_and_abs(df):
     for k in all:
         all[k]['rel'] = round_to_n(all[k]['abs'] / tot, 3)
         all[k]['abs'] = round_to_n(all[k]['abs'], 3)
+        all[k] = [all[k]['abs'], all[k]['rel']] # change form dict to list to win some space
     return all
 
 spendings = []
@@ -213,14 +241,15 @@ for year in range(2012, 2022, 2):
             sheet_info = get_sheet_info(file, sheet)
             groups = get_data(sheet_info)
             for group, df in groups.items():
-                s = percent_and_abs(df)
-                spendings.append({
-                    'year': year,
-                    'region': region,
-                    'grouping': grouping,
-                    'group': group,
-                    'spendings': {k: v for k, v in s.items() if k in DATA['products']}
-                })
+                if group != '3 adultes ou plus*': # exception for missing data
+                    s = percent_and_abs(df)
+                    spendings.append({
+                        'year': year,
+                        'region': region,
+                        'grouping': grouping,
+                        'group': group,
+                        'spendings': {k: v for k, v in s.items() if k in DATA['products']}
+                    })
 
 DATA['spendings'] = spendings
 
