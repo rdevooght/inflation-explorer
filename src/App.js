@@ -163,6 +163,10 @@ function EBMSummary(props) {
       </Row>
       <div className='row row-cols-1 row-cols-sm-2'>
         <div className='col'>
+          <h4>Part dans le budget annuel</h4>
+          <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
+        </div>
+        <div className='col'>
           <h4 className='d-flex justify-content-between align-items-start"'>
             Evolution de la consommation réelle
             <OverlayTrigger trigger="click" placement="auto" overlay={consommation_reelle_helper}>
@@ -170,10 +174,6 @@ function EBMSummary(props) {
             </OverlayTrigger>
           </h4>
           <BarChart data={absolute_consumption} x={{label: null}} y={{label: null, grid: true, percent: true}} />
-        </div>
-        <div className='col'>
-          <h4>Part dans le budget annuel</h4>
-          <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
         </div>
       </div>
     </div>

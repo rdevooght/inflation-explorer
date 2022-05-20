@@ -3,6 +3,7 @@ import React, {useEffect, useRef} from 'react';
 import * as Plot from "@observablehq/plot";
 
 import data from './data.json';
+import { get_deviation_from_base_rate } from './handleData';
 
 // Draws the evolution of CPI over time
 function CPITimeline(props) {
@@ -11,6 +12,9 @@ function CPITimeline(props) {
   
     useEffect(() => {
       const timescale = data.timescales[data.products[props.coicop].timescale];
+      let deviation = get_deviation_from_base_rate(props.coicop);
+      deviation.push(0);
+      const step_dev = d => (d > 0) ? 1 : (d === 0) ? 0 : -1;
 
       let norm = data.products[props.coicop].CPI[0];
       if (timescale[0] != '2012-01-01') {
@@ -18,7 +22,7 @@ function CPITimeline(props) {
         norm = 100 - (norm - 100) / months_since_2013 * 18;
       }
 
-      const values = data.products[props.coicop].CPI.map((cpi, i) => ({'cpi': cpi/norm*100, 'date': timescale[i]}));
+      const values = data.products[props.coicop].CPI.map((cpi, i) => ({'cpi': cpi/norm*100, 'date': timescale[i], 'deviation': step_dev(deviation[i+1])}));
       const max_value = Math.max(...values.map(v => v.cpi));
       
       const width = chartRef.current.clientWidth;
@@ -33,10 +37,17 @@ function CPITimeline(props) {
           Plot.line(values, {
             x: "date", 
             y: "cpi",
-            stroke: "steelblue",
+            z: null,
+            stroke: "deviation",
             strokeWidth: 2,
           })
         ],
+        color: {
+          type: "categorical",
+          domain: [-1, 0, 1],
+          range: ["#00ff00", "#0000ff", "#ff0000"], 
+          legend: false,
+        },
         x: {type: "time", format: "%Y-%m-%d", domain: ['2011-06-01', '2022-05-31']},
         y: {label: null, grid: true, domain: [0, max_value]},
       });

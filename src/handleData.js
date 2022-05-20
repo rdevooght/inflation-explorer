@@ -66,4 +66,19 @@ for (let s of data.spendings) {
   }
 }
 
-export {get_closest_index, get_spendings, groupings_options};
+// Compute base rate of inflation
+let base_rate = {};
+for (let i = 1; i < data.products['0'].CPI.length; i++) {
+  base_rate[data.timescales[data.products['0'].timescale][i]] = data.products['0'].CPI[i] / data.products['0'].CPI[i-1] - 1;
+}
+
+function get_deviation_from_base_rate(coicop) {
+  let timescale = data.timescales[data.products[coicop].timescale];
+  let deviation = [0];
+  for (let i = 1; i < data.products[coicop].CPI.length; i++) {
+    deviation.push((data.products[coicop].CPI[i] / data.products[coicop].CPI[i-1] - 1) - base_rate[timescale[i]]);
+  }
+  return deviation;
+}
+
+export {get_closest_index, get_spendings, groupings_options, get_deviation_from_base_rate};
