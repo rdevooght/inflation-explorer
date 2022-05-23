@@ -3,7 +3,25 @@ import React, {useEffect, useRef} from 'react';
 import * as Plot from "@observablehq/plot";
 
 import data from './data.json';
+import {shorten} from './util';
 import { get_deviation_from_base_rate } from './handleData';
+
+function get_CPI_values(coicop) {
+  const timescale = data.timescales[data.products[coicop].timescale];
+
+  // let deviation = get_deviation_from_base_rate(coicop);
+  // deviation.push(0);
+  // const step_dev = d => (d > 0) ? 1 : (d === 0) ? 0 : -1;
+
+  let norm = data.products[coicop].CPI[0];
+  if (timescale[0] != '2012-01-01') {
+    let months_since_2013 = (parseInt(timescale[0].split('-')[0]) - 2013) * 12 + parseInt(timescale[0].split('-')[1]) - 6;
+    norm = 100 - (norm - 100) / months_since_2013 * 18;
+  }
+
+  // return data.products[coicop].CPI.map((cpi, i) => ({'cpi': cpi/norm*100, 'date': timescale[i], 'deviation': step_dev(deviation[i+1])}));
+  return data.products[coicop].CPI.map((cpi, i) => ({'cpi': cpi/norm*100, 'date': timescale[i]}));
+}
 
 // Draws the evolution of CPI over time
 function CPITimeline(props) {
@@ -11,19 +29,9 @@ function CPITimeline(props) {
     const chartRef = useRef();
   
     useEffect(() => {
-      const timescale = data.timescales[data.products[props.coicop].timescale];
-      let deviation = get_deviation_from_base_rate(props.coicop);
-      deviation.push(0);
-      const step_dev = d => (d > 0) ? 1 : (d === 0) ? 0 : -1;
-
-      let norm = data.products[props.coicop].CPI[0];
-      if (timescale[0] != '2012-01-01') {
-        let months_since_2013 = (parseInt(timescale[0].split('-')[0]) - 2013) * 12 + parseInt(timescale[0].split('-')[1]) - 6;
-        norm = 100 - (norm - 100) / months_since_2013 * 18;
-      }
-
-      const values = data.products[props.coicop].CPI.map((cpi, i) => ({'cpi': cpi/norm*100, 'date': timescale[i], 'deviation': step_dev(deviation[i+1])}));
-      const max_value = Math.max(...values.map(v => v.cpi));
+      const values = get_CPI_values(props.coicop);
+      const baseline = get_CPI_values('0');
+      const max_value = Math.max(...values.map(v => v.cpi), ...baseline.map(v => v.cpi));
       
       const width = chartRef.current.clientWidth;
 
@@ -41,6 +49,14 @@ function CPITimeline(props) {
             // stroke: "deviation",
             stroke: "steelblue",
             strokeWidth: 2,
+          }),
+          Plot.line(baseline, {
+            x: "date", 
+            y: "cpi",
+            // z: null,
+            // stroke: "deviation",
+            stroke: "gray",
+            strokeWidth: 1,
           })
         ],
         /*color: {
@@ -59,6 +75,7 @@ function CPITimeline(props) {
     return (
       <>
         <h3>Evolution de l'indice de prix</h3>
+        <p><em>En bleu: {shorten(data.products[props.coicop].name, 24)} - en gris: inflation globale</em></p>
         <div className='chart' ref={chartRef}>
         </div>
       </>
