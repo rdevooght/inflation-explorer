@@ -73,15 +73,14 @@ function BreadCrumb(props) {
   return (
     <div>
       {breadcrumb.reverse().map(d => (
-        <>
+        <span key={d.coicop}>
           <a 
-            key={d.coicop}
             href={`#${d.coicop}`} 
             onClick={() => props.setCOICOP(d.coicop)}
             title={d.name}
           >{shorten(d.name, 24)}</a>
           &nbsp; &rsaquo; &nbsp; 
-        </>
+        </span>
       ))}
     </div>
   )
@@ -267,7 +266,7 @@ function SearchResult(props) {
           <h2>{cat.name}</h2>
           <CPITimeline coicop={props.result.coicop}/>
           <CPITextSummary coicop={props.result.coicop}/>
-          <EBMSummary coicop={props.result.coicop} />
+          {props.result.coicop !== '0' && <EBMSummary coicop={props.result.coicop} />}
           <SubProducts coicop={props.result.coicop} setCOICOP={props.setCOICOP} />
         </Card.Body>
       </Card>
@@ -322,7 +321,7 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {query: 'Boissons', queryType: 'text'};
+    this.state = {query: '', queryType: 'text'};
     this.onInputChange = this.onInputChange.bind(this);
     this.setCOICOP = this.setCOICOP.bind(this);
   }
@@ -337,7 +336,7 @@ class App extends React.Component {
 
   render () {
 
-    let results = [];
+    let results = [data.products['0']];
     if (this.state.query) {
       if (this.state.queryType === 'text') {
         results = search(this.state.query);

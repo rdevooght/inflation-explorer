@@ -75,7 +75,7 @@ function CPITimeline(props) {
     return (
       <>
         <h3>Evolution de l'indice de prix</h3>
-        <p><em>En bleu: {shorten(data.products[props.coicop].name, 24)} - en gris: inflation globale</em></p>
+        {props.coicop !== '0' && <p><em>En bleu: {shorten(data.products[props.coicop].name, 24)} - en gris: inflation globale</em></p>}
         <div className='chart' ref={chartRef}>
         </div>
       </>
