@@ -326,12 +326,24 @@ class App extends React.Component {
     this.setCOICOP = this.setCOICOP.bind(this);
   }
 
+  componentDidMount() {
+    if (window.location.hash) {
+      const hash = decodeURI(window.location.hash.slice(1));
+      if (/^\d+$/.test(hash)) {
+        this.setCOICOP(hash);
+      } else {
+        this.setState({query: hash, queryType: 'text'});
+      }
+    }
+  }
+
   setCOICOP(coicop) {
     this.setState({query: coicop, queryType: 'coicop'});
   }
 
   onInputChange(event) {
     this.setState({query: event.target.value, queryType: 'text'});
+    window.location.hash = `#${event.target.value}`;
   }
 
   render () {
