@@ -2,14 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <!-- <link rel="icon" href="%PUBLIC_URL%/favicon.ico" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
       content="Un outil de recherche pour parcourir les données d'inflation"
     />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="L'inflation, produit par produit">
+    <meta name="description" content="Un outil de recherche pour parcourir les données d'inflation">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blog.robindevooght.be/posts/search-inflation/">
+    <meta property="og:title" content="L'inflation, produit par produit">
+    <meta property="og:description" content="Un outil de recherche pour parcourir les données d'inflation">
+    <meta property="og:image" content="%PUBLIC_URL%/meta.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://blog.robindevooght.be/posts/search-inflation/">
+    <meta property="twitter:title" content="L'inflation, produit par produit">
+    <meta property="twitter:description" content="Un outil de recherche pour parcourir les données d'inflation">
+    <meta property="twitter:image" content="%PUBLIC_URL%/meta.png">
+
+    <!-- <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" /> -->
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -24,7 +43,7 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Les inflations</title>
+    <title>L'inflation, produit par produit</title>
   </head>
   <body>
     <div class="container bg-light p-4" id="intro">
@@ -51,7 +70,15 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <footer class="container bg-light p-4" id="footer">
-      <h2>Données</h2>
+      <h2>A propos</h2>
+      <p>Cet outil est r&eacute;alis&eacute; par <a href="https://blog.robindevooght.be">Robin Devooght</a>.</p>
+      <p>
+        Vous pouvez me contacter &agrave; robin.devooght[at]mailo.com, 
+        ou explorer mes autres projets sur le <a href="https://blog.robindevooght.be/posts/chambre_des_representant-es/">temps de parole</a> 
+        au <a href="https://blog.robindevooght.be/posts/genre_au_parlement_wallon/">parlement Wallon</a> 
+        et &agrave; la <a href="https://blog.robindevooght.be/posts/chambre_des_representant-es/">Chambre</a>.
+      </p>
+      <h3>Données</h3>
       <p>
         Les donn&eacute;es viennent de Statbel. 
         Les indices de prix sont mis &agrave; jours mensuellement 
