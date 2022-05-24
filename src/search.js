@@ -100,10 +100,15 @@ function make_search_engine() {
 const search = make_search_engine();
 
 function get_children(coicop) {
-  var children = Object.keys(data.products).filter(
-    c => c.slice(0, -1) === coicop
-  );
-  return children;
+  if (coicop == '0') {
+    return Object.keys(data.products).filter(
+      c => c.length === 2
+    );
+  } else {
+    return Object.keys(data.products).filter(
+      c => c.slice(0, -1) === coicop
+    );
+  }
 }
 
 export {search, get_children};
