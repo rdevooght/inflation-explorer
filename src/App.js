@@ -152,13 +152,26 @@ function EBMSummary(props) {
     }
   }
 
+  const part_budget_helper = (
+    <Popover id="popover-basic">
+      <Popover.Body>
+        <p>Part que les d&eacute;penses pour ce produit repr&eacute;sentent les d&eacute;penses annuelles de la population (ou du sous-groupe de la population s&eacute;lectionn&eacute;).</p>
+        <p>Les donn&eacute;es viennent de l&rsquo; enqu&ecirc;te sur le budget des m&eacute;nages. Malheureusement, la d&eacute;finition des cat&eacute;gories n&rsquo;est parfois pas exactement la m&ecirc;me que pour l&rsquo;indice des prix, mais les diff&eacute;rences concernent en g&eacute;n&eacute;ral des d&eacute;tails qui ne devraient pas affecter l&rsquo;interpr&eacute;tation des chiffres.</p>
+      </Popover.Body>
+    </Popover>
+  );
+
   const consommation_reelle_helper = (
     <Popover id="popover-basic">
       <Popover.Body>
-        La consommation "réelle" est calculée en tenant compte des montants moyens dépensés par les ménages, et de l'évolution de l'indice de prix pour ce produit.
-        Si les montants dépensés pour un produit évolue au même rythme que l'indice des prix, la consommation réelle apparaitra stable.
-        Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmente aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable
-        Si les montants dépensés augmentent plus vite que l'indice des prix, on considère que la consommation réelle a augmenté, et à l'inverse qu'elle a diminué si les montants augmentent moins vite que les prix.
+        <p>
+          La consommation "réelle" est calculée en tenant compte des montants moyens dépensés par les ménages, et de l'évolution de l'indice de prix pour ce produit.
+          Si les montants dépensés pour un produit évolue au même rythme que l'indice des prix, la consommation réelle apparaitra stable.
+        </p>
+        <p>
+          Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmente aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable
+          Si les montants dépensés augmentent plus vite que l'indice des prix, on considère que la consommation réelle a augmenté, et à l'inverse qu'elle a diminué si les montants augmentent moins vite que les prix.
+        </p>
       </Popover.Body>
     </Popover>
   );
@@ -178,13 +191,18 @@ function EBMSummary(props) {
       </Row>
       <div className='row row-cols-1 row-cols-sm-2'>
         <div className='col'>
-          <h4>Part dans le budget annuel</h4>
+          <h4 className='d-flex justify-content-between align-items-start'>
+            Part dans le budget annuel
+            <OverlayTrigger trigger={['hover', 'focus']} placement="auto" overlay={part_budget_helper}>
+              <span className='small fs-6 ml-2'><Badge pill bg="secondary">?</Badge></span>
+            </OverlayTrigger>
+          </h4>
           <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
         </div>
         <div className='col'>
-          <h4 className='d-flex justify-content-between align-items-start"'>
+          <h4 className='d-flex justify-content-between align-items-start'>
             Evolution de la consommation réelle
-            <OverlayTrigger trigger="click" placement="auto" overlay={consommation_reelle_helper}>
+            <OverlayTrigger trigger={['hover', 'focus']} placement="auto" overlay={consommation_reelle_helper}>
               <span className='small fs-6 ml-2'><Badge pill bg="secondary">?</Badge></span>
             </OverlayTrigger>
           </h4>
