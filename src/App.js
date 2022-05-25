@@ -27,7 +27,7 @@ function SearchExamples(props) {
   ]
 
   return (
-    <Stack direction="horizontal" gap={2} className='mt-2 mb-3'>
+    <Stack direction="horizontal" gap={2} className='mt-2 mb-3 py-1 search-examples'>
       <span>Exemples :</span>
       {examples.map(example => (
         <Button 

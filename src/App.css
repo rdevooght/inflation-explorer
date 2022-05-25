@@ -15,3 +15,9 @@
 .chart {
     width: 100%;
 }
+
+.search-examples {
+    width: 100%;
+    overflow-x: scroll;
+    white-space: nowrap;
+}
