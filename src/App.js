@@ -16,9 +16,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/fr'; 
 
 import data from './data.json';
-import {search, get_children} from './search';
+import {search} from './search';
 import {shorten} from './util';
-import { get_closest_index, get_spendings, groupings_options } from './handleData';
+import { get_closest_index, get_spendings, groupings_options, get_children } from './handleData';
 import { CPITimeline, BarChart } from './charts';
 
 function SearchExamples(props) {
@@ -42,11 +42,15 @@ function SearchExamples(props) {
 }
 
 function SearchInput(props) {
+
+  const products = Object.keys(data.products).map(key => data.products[key]).sort((a, b) => a.coicop > b.coicop ? 1 : -1);
+
   return (
     <Form className='mb-2' onSubmit={e => { e.preventDefault(); }}>
       <Form.Group>
         <InputGroup>
           <FormControl 
+            list='product-list'
             value={props.query} 
             onChange={props.onChange}
             placeholder='Rechercher une catégorie de produits'
@@ -59,6 +63,11 @@ function SearchInput(props) {
           </Button>
         </InputGroup>
       </Form.Group>
+      <datalist id="product-list">
+        {products.map(product => (
+          <option key={product.coicop} value={`${'-'.repeat(product.level)} ${product.name}`} />
+        ))}
+      </datalist>
       <SearchExamples onChange={props.onChange}/>
     </Form>
   )
@@ -268,11 +277,21 @@ function CPITextSummary(props) {
   const year_ev = (most_recent_CPI - previous_year_CPI) / previous_year_CPI;
   const decade_ev = (most_recent_CPI - previous_decade_CPI) / previous_decade_CPI;
 
+  function evolution_text(ev) {
+    if (ev === 0) {
+      return (<>identique à</>);
+    } else if (ev > 0) {
+      return (<><Badge pill bg='danger'>{Math.abs(ev*100).toFixed(1)}%</Badge> plus élevé que</>);
+    } else {
+      return (<><Badge pill bg='success'>{Math.abs(ev*100).toFixed(1)}%</Badge> moins élevé que</>);
+    }
+  }
+
   return (
     <p className='my-3'>
       En {base_date.locale('fr').format('MMMM YYYY')}, 
-      le prix du produit est {Math.abs(year_ev*100).toFixed(1)}% {(year_ev > 0) ? 'plus' : 'moins'} élevé qu'un an plus tôt,
-      et {Math.abs(decade_ev*100).toFixed(1)}% {(year_ev > 0) ? 'plus' : 'moins'} élevé que {base_date.year() - dayjs(previous_decade_date).year()} ans plus tôt.
+      le prix du produit est {evolution_text(year_ev)} an plus tôt,
+      et {evolution_text(decade_ev)} {base_date.year() - dayjs(previous_decade_date).year()} ans plus tôt.
     </p>
   )
 }

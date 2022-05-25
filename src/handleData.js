@@ -81,4 +81,16 @@ function get_deviation_from_base_rate(coicop) {
   return deviation;
 }
 
-export {get_closest_index, get_spendings, groupings_options, get_deviation_from_base_rate};
+function get_children(coicop) {
+  if (coicop === '0') {
+    return Object.keys(data.products).filter(
+      c => c.length === 2
+    ).sort();
+  } else {
+    return Object.keys(data.products).filter(
+      c => c.slice(0, -1) === coicop
+    ).sort();
+  }
+}
+
+export {get_closest_index, get_spendings, groupings_options, get_deviation_from_base_rate, get_children};

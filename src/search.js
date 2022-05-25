@@ -15,10 +15,10 @@ function remove_final_s(str) {
  * @returns 
  */
 function tokenize(str) {
-  str = str.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  str = str.trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
   str = str.replace(/[^a-z\s]/g, "");
   let words = str.split(/\s+/);
-  return words.map(word => remove_final_s(word));
+  return words.map(word => remove_final_s(word)).filter(word => word.length > 1);
 }
 
 /**
@@ -99,16 +99,4 @@ function make_search_engine() {
 
 const search = make_search_engine();
 
-function get_children(coicop) {
-  if (coicop === '0') {
-    return Object.keys(data.products).filter(
-      c => c.length === 2
-    );
-  } else {
-    return Object.keys(data.products).filter(
-      c => c.slice(0, -1) === coicop
-    );
-  }
-}
-
-export {search, get_children};
+export {search};
