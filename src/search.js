@@ -100,7 +100,7 @@ function make_search_engine() {
 const search = make_search_engine();
 
 function get_children(coicop) {
-  if (coicop == '0') {
+  if (coicop === '0') {
     return Object.keys(data.products).filter(
       c => c.length === 2
     );
