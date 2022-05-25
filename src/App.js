@@ -10,6 +10,7 @@ import Badge from 'react-bootstrap/Badge';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import Stack from 'react-bootstrap/Stack'
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr'; 
@@ -19,6 +20,26 @@ import {search, get_children} from './search';
 import {shorten} from './util';
 import { get_closest_index, get_spendings, groupings_options } from './handleData';
 import { CPITimeline, BarChart } from './charts';
+
+function SearchExamples(props) {
+  const examples = [
+    'Loyer', 'Pain', 'Diesel', 'Bière', 'Assurance voyage'
+  ]
+
+  return (
+    <Stack direction="horizontal" gap={2} className='mt-2 mb-3'>
+      <span>Exemples :</span>
+      {examples.map(example => (
+        <Button 
+          variant="outline-dark" 
+          className='rounded-pill'
+          key={example} 
+          onClick={() => props.onChange({target:{value: example}})}
+        >{example}</Button>
+      ))}
+    </Stack>
+  )
+}
 
 function SearchInput(props) {
   return (
@@ -38,6 +59,7 @@ function SearchInput(props) {
           </Button>
         </InputGroup>
       </Form.Group>
+      <SearchExamples onChange={props.onChange}/>
     </Form>
   )
 }
