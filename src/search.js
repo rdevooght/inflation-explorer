@@ -1,3 +1,5 @@
+import { distance as levenshtein_distance } from 'fastest-levenshtein';
+
 import data from './data.json';
 
 
@@ -40,6 +42,34 @@ function make_index(docs) {
   return index;
 }
 
+function levenshtein_similarity(str1, str2) {
+  return 1 - levenshtein_distance(str1, str2) / Math.max(str1.length, str2.length);
+}
+
+function fuzzy_match(query_tokens, index, threshold=0.7) {
+  let matches = [];
+  for (let token of query_tokens) {
+    for (let index_token in index) {
+      if (levenshtein_similarity(index_token, token) >= threshold) {
+        matches.push(...index[index_token]);
+      }
+    }
+  }
+  return matches;
+}
+
+function start_match(query_tokens, index, min_length=2) {
+  let matches = [];
+  for (let token of query_tokens) {
+    for (let index_token in index) {
+      if (index_token.startsWith(token) && index_token.length >= min_length && token.length >= min_length) {
+        matches.push(...index[index_token]);
+      }
+    }
+  }
+  return matches;
+}
+
 /**
  * Takes in a query and an index built with the make_index function, and returns a list of results.
  * @param {string} query 
@@ -47,13 +77,9 @@ function make_index(docs) {
  */
 function custom_search(query, index) {
   const query_tokens = tokenize(query);
-  let matches = [];
-  for (let token of query_tokens) {
-    for (let index_token in index) {
-      if (index_token.startsWith(token)) {
-        matches.push(...index[index_token]);
-      }
-    }
+  let matches = start_match(query_tokens, index);
+  if (matches.length === 0) {
+    matches = fuzzy_match(query_tokens, index);
   }
 
   let matches_dict = {};
@@ -91,6 +117,7 @@ function make_search_engine() {
     const results = custom_search(query, index);
     const products = results.map(r => Object.assign({score: r.score}, {coicop: search_items[r.doc].coicop}));
     products.sort((a, b) => a.coicop.length - b.coicop.length);
+    products.sort((a, b) => b.score - a.score);
     return products;
   }
 
@@ -99,4 +126,14 @@ function make_search_engine() {
 
 const search = make_search_engine();
 
-export {search};
+// Returns the coicop of the product whose name matches the query exactly.
+function exact_match(query) {
+  for (let coicop in data.products) {
+    if (data.products[coicop].name === query) {
+      return coicop;
+    }
+  }
+  return null;
+}
+
+export {search, exact_match};

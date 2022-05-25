@@ -56,6 +56,18 @@ function get_spendings(coicop, year, region, grouping, group) {
   return undefined;
 }
 
+// Get the highest relative spendings for a given coicop
+// accross all groups, year and regions
+function get_max_relative_spending(coicop) {
+  let max = 0;
+  for (let s of data.spendings) {
+    if (s.spendings[coicop] && s.spendings[coicop][1] > max) {
+      max = s.spendings[coicop][1];
+    }
+  }
+  return max;
+}
+
 // Identify existing grouping options
 let groupings_options = {};
 for (let s of data.spendings) {
@@ -93,4 +105,4 @@ function get_children(coicop) {
   }
 }
 
-export {get_closest_index, get_spendings, groupings_options, get_deviation_from_base_rate, get_children};
+export {get_closest_index, get_spendings, groupings_options, get_deviation_from_base_rate, get_children, get_max_relative_spending};

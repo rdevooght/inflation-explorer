@@ -16,9 +16,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/fr'; 
 
 import data from './data.json';
-import {search} from './search';
+import {search, exact_match} from './search';
 import {shorten} from './util';
-import { get_closest_index, get_spendings, groupings_options, get_children } from './handleData';
+import { get_closest_index, get_spendings, groupings_options, get_children, get_max_relative_spending } from './handleData';
 import { CPITimeline, BarChart } from './charts';
 
 function SearchExamples(props) {
@@ -168,6 +168,8 @@ function EBMSummary(props) {
   let relative_consumption = [];
   let normaliser = 0;
 
+  const max_relative_spending = get_max_relative_spending(props.coicop);
+
   for (let year of [2012, 2014, 2016, 2018, 2020]) {
     let spendings = get_spendings(props.coicop, year, region, group[0], group[1]);
     if (spendings !== undefined) {
@@ -228,7 +230,7 @@ function EBMSummary(props) {
               <span className='small fs-6 ml-2'><Badge pill bg="secondary">?</Badge></span>
             </OverlayTrigger>
           </h4>
-          <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
+          <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p", domain: [0, max_relative_spending]}} />
         </div>
         <div className='col'>
           <h4 className='d-flex justify-content-between align-items-start'>
@@ -401,6 +403,17 @@ class App extends React.Component {
   }
 
   onInputChange(event) {
+    let query = event.target.value;
+    if (query.startsWith('-')) {
+      query = query.replace(/^-+ /, '');
+      let match = exact_match(query);
+      if (match) {
+        this.setCOICOP(match);
+        window.location.hash = `#${match}`;
+        return;
+      }
+    }
+
     this.setState({query: event.target.value, queryType: 'text'});
     window.location.hash = `#${event.target.value}`;
   }

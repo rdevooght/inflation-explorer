@@ -110,7 +110,8 @@ function CPITimeline(props) {
             x: "x", 
             y: "y",
             fill: "steelblue",
-          })
+          }),
+          Plot.text(props.data, {x: "x", y: "y", text: d => `${(d.y * 100).toFixed(1)}`, dy: -10}),
         ],
         y: y,
         x: x,
