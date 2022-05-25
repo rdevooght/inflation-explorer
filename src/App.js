@@ -160,9 +160,23 @@ function GroupSelector(props) {
 
 // Shows the evolution of EBM data for a given COICOP code
 function EBMSummary(props) {
-
+  
   let [group, setGroup] = useState(['total', 'total']);
   let [region, setRegion] = useState('BE');
+
+  if (props.coicop.startsWith('10')) {
+    return (
+      <div className='my-5'>
+        <h3>
+          Evolution de la consommation
+        </h3>
+        <p>
+          Les données concernant l'enseignement sont définies différemment dans l'enquête sur le budget des ménages
+          et dans l'indice des prix à la consommation, il n'est donc pas possible de visualiser les données relative au budget pour l'enseignement.
+        </p>
+      </div>
+    );
+  }
   
   let absolute_consumption = [];
   let relative_consumption = [];
