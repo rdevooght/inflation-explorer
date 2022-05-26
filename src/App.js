@@ -181,23 +181,38 @@ function EBMSummary(props) {
   let absolute_consumption = [];
   let relative_consumption = [];
   let normaliser = 0;
+  let max_consumption = 0;
 
   const max_relative_spending = get_max_relative_spending(props.coicop);
 
+  // Find normaliser: consumption for the whole population at the earliest available year
   for (let year of [2012, 2014, 2016, 2018, 2020]) {
+    
+    let base_spendings = get_spendings(props.coicop, year, 'BE', 'total', 'total');
+    if (base_spendings !== undefined) {
+      const cpi = get_closest_index(props.coicop, `${year}-06`);
+      normaliser = base_spendings[0]/cpi;
+      break;
+    }
+  }
+
+  for (let year of [2012, 2014, 2016, 2018, 2020]) {
+    
     let spendings = get_spendings(props.coicop, year, region, group[0], group[1]);
     if (spendings !== undefined) {
-
       const cpi = get_closest_index(props.coicop, `${year}-06`);
-      absolute_consumption.push({x: year, y: spendings[0]/cpi});
-      if (normaliser === 0) {
-        normaliser = absolute_consumption[absolute_consumption.length-1].y;
-      }
-      absolute_consumption[absolute_consumption.length-1].y /= normaliser;
+      
+      absolute_consumption.push({x: year, y: spendings[0]/cpi/normaliser});
+
+      max_consumption = Math.max(max_consumption, spendings[0]/cpi/normaliser);
 
       relative_consumption.push({x: year, y: spendings[1]});
     }
   }
+
+  // Ensures that the scale of the graph of real consumption goes at least to 100
+  const abs_y = (max_consumption < 1) ? {label: null, grid: true, percent: true, domain: [0, 100]} : {label: null, grid: true, percent: true}
+
 
   const part_budget_helper = (
     <Popover id="popover-basic">
@@ -216,8 +231,12 @@ function EBMSummary(props) {
           Si les montants dépensés pour un produit évolue au même rythme que l'indice des prix, la consommation réelle apparaitra stable.
         </p>
         <p>
-          Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmente aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable
+          Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmente aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable.
           Si les montants dépensés augmentent plus vite que l'indice des prix, on considère que la consommation réelle a augmenté, et à l'inverse qu'elle a diminué si les montants augmentent moins vite que les prix.
+        </p>
+        <p>
+          La consommation moyenne de l'ensemble de la population en 2012 est fixée à 100.
+          La consommation pour les autres années et pour les sous-groupes de population sont calculés relativement à cette valeur.
         </p>
       </Popover.Body>
     </Popover>
@@ -253,7 +272,7 @@ function EBMSummary(props) {
               <span className='small fs-6 ml-2'><Badge pill bg="secondary">?</Badge></span>
             </OverlayTrigger>
           </h4>
-          <BarChart data={absolute_consumption} x={{label: null}} y={{label: null, grid: true, percent: true}} />
+          <BarChart data={absolute_consumption} x={{label: null}} y={abs_y} />
         </div>
       </div>
     </div>
