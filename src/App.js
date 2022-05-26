@@ -231,7 +231,7 @@ function EBMSummary(props) {
           Si les montants dépensés pour un produit évolue au même rythme que l'indice des prix, la consommation réelle apparaitra stable.
         </p>
         <p>
-          Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmente aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable.
+          Par exemple, si le prix du pain augmente de 10%, et que les dépenses en pain augmentent aussi de 10%, le nombre de pains achetés n'a pas changé, la consommation réelle est donc stable.
           Si les montants dépensés augmentent plus vite que l'indice des prix, on considère que la consommation réelle a augmenté, et à l'inverse qu'elle a diminué si les montants augmentent moins vite que les prix.
         </p>
         <p>
