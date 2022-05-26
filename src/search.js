@@ -20,7 +20,7 @@ function tokenize(str) {
   str = str.trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
   str = str.replace(/[^a-z\s]/g, "");
   let words = str.split(/\s+/);
-  return words.map(word => remove_final_s(word)).filter(word => word.length > 1);
+  return [...new Set(words.map(word => remove_final_s(word)).filter(word => word.length > 1))];
 }
 
 /**
