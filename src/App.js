@@ -18,7 +18,10 @@ import 'dayjs/locale/fr';
 import data from './data.json';
 import {search, exact_match} from './search';
 import {shorten} from './util';
-import { get_closest_index, get_spendings, groupings_options, get_children, get_max_relative_spending } from './handleData';
+import { 
+  get_closest_index, get_spendings, groupings_options, 
+  get_children, get_max_relative_spending, get_facets, get_facet_elements 
+} from './handleData';
 import { CPITimeline, BarChart } from './charts';
 
 function SearchExamples(props) {
@@ -117,6 +120,124 @@ function BreadCrumb(props) {
   )
 }
 
+function YearSelector(props) {
+
+  const years = [2012, 2014, 2016, 2018, 2020];
+
+
+  return (
+    <FloatingLabel label="Année">
+      <Form.Select value={props.value} onChange={e => props.onChange(parseInt(e.target.value))}>
+        {years.map(year => (
+          <option key={year} value={year}>{year}</option>
+        ))}
+      </Form.Select>
+    </FloatingLabel>
+  )
+}
+
+function FacetSelector(props) {
+
+  const facets = get_facets();
+
+
+  return (
+    <FloatingLabel label="Comparer par">
+      <Form.Select value={props.value} onChange={e => props.onChange(e.target.value)}>
+        {facets.map(facet => (
+          <option key={facet} value={facet}>{facet}</option>
+        ))}
+      </Form.Select>
+    </FloatingLabel>
+  )
+}
+
+// Shows the EBM data for a given COICOP code
+// Allow to compare group or regions for a given year
+function EBMComparison(props) {
+  
+  let [facet, setFacet] = useState('quartile de revenus');
+  let [year, setYear] = useState(2020);
+
+  if (props.coicop.startsWith('10')) {
+    return (<></>);
+  }
+  
+  let absolute_consumption = [];
+  let relative_consumption = [];
+
+  for (let elem of get_facet_elements(facet)) {
+    
+    let spendings = get_spendings(props.coicop, year, elem.region, elem.grouping, elem.group);
+    if (spendings !== undefined) {
+      
+      absolute_consumption.push({x: elem.label, y: spendings[0]});
+
+      relative_consumption.push({x: elem.label, y: spendings[1]});
+    }
+  }
+
+  const consommation_par_menage_helper = (
+    <Popover id="popover-basic">
+      <Popover.Body>
+        Dépenses annuelles moyennes par ménage en euros.
+      </Popover.Body>
+    </Popover>
+  );
+
+  const eurostat_legend = [
+    ["Personne seule", 'Seul·e'],
+    ["2 adultes", '2 A'],
+    ["3 adultes ou plus", '3+ A'],
+    ["1 adulte avec enfant(s) dépendant(s)", '1 A + E'],
+    ["2 adultes avec  enfant(s) dépendant(s)", '2 A + E'],
+    ["3 adultes ou plus avec enfant(s) dépendant(s)", '3+ A + E'],
+  ]
+
+  return (
+    <div className='my-5'>
+      <h3>
+        Comparaison de groupes
+      </h3>
+      <Row className='my-2'>
+        <Col>
+          <FacetSelector value={facet} onChange={setFacet}/>
+        </Col>
+        <Col>
+          <YearSelector value={year} onChange={setYear}/>
+        </Col>
+      </Row>
+      <div className='row row-cols-1 row-cols-sm-2'>
+        <div className='col'>
+          <h4 className='d-flex justify-content-between align-items-start'>
+            Part dans le budget annuel
+          </h4>
+          <BarChart data={relative_consumption} x={{label: null}} y={{label: null, grid: true, tickFormat: "p"}} />
+        </div>
+        <div className='col'>
+          <h4 className='d-flex justify-content-between align-items-start'>
+            Dépenses par ménage en euros
+            <OverlayTrigger trigger={['hover', 'focus']} placement="auto" overlay={consommation_par_menage_helper}>
+              <span className='small fs-6 ml-2'><Badge pill bg="secondary">?</Badge></span>
+            </OverlayTrigger>
+          </h4>
+          <BarChart data={absolute_consumption} x={{label: null}} y={{label: null, grid: true}} text_format={d => `${d.y} €`} />
+        </div>
+      </div>
+      {(facet === 'type de ménage eurostat') && (
+        <div className='mt-2'>
+        <p className='mb-0'>Légende:</p>
+        <ul>
+          {eurostat_legend.map(([label, code]) => (
+            <li key={code}>{code}: {label}</li>
+          ))}
+        </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function RegionSelector(props) {
 
   const regions = {
@@ -129,7 +250,7 @@ function RegionSelector(props) {
 
   return (
     <FloatingLabel label="Région">
-      <Form.Select value={props.region} onChange={e => props.onChange(e.target.value)}>
+      <Form.Select value={props.value} onChange={e => props.onChange(e.target.value)}>
         {Object.keys(regions).map(region => (
           <option key={region} value={region}>{regions[region]}</option>
         ))}
@@ -361,6 +482,7 @@ function SearchResult(props) {
           <CPITimeline coicop={props.result.coicop}/>
           <CPITextSummary coicop={props.result.coicop}/>
           {props.result.coicop !== '0' && <EBMSummary coicop={props.result.coicop} />}
+          {props.result.coicop !== '0' && <EBMComparison coicop={props.result.coicop} />}
           <SubProducts coicop={props.result.coicop} setCOICOP={props.setCOICOP} />
         </Card.Body>
       </Card>

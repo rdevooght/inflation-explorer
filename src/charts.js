@@ -97,6 +97,7 @@ function CPITimeline(props) {
       const width = props.width ? props.width : chartRef.current.clientWidth;
       const x = props.x ? props.x : {};
       const y = props.y ? props.y : {};
+      const text_format = props.text_format ? props.text_format : d => `${(d.y * 100).toFixed(1)}`;
 
       const chart = Plot.plot({
         height: Math.min(width*0.6, 400),
@@ -111,7 +112,7 @@ function CPITimeline(props) {
             y: "y",
             fill: "steelblue",
           }),
-          Plot.text(props.data, {x: "x", y: "y", text: d => `${(d.y * 100).toFixed(1)}`, dy: -10}),
+          Plot.text(props.data, {x: "x", y: "y", text: text_format, dy: -10}),
         ],
         y: y,
         x: x,

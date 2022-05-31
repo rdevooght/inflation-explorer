@@ -77,6 +77,7 @@ for (let s of data.spendings) {
     groupings_options[s.grouping].push(s.group);
   }
 }
+console.log(groupings_options);
 
 // Compute base rate of inflation
 let base_rate = {};
@@ -105,4 +106,62 @@ function get_children(coicop) {
   }
 }
 
-export {get_closest_index, get_spendings, groupings_options, get_deviation_from_base_rate, get_children, get_max_relative_spending};
+/* 
+  Facets functions 
+  -----------------
+  Some helpers to get the list of available facets (groups and regions), groups per facet, etc.
+*/
+
+function get_facets() {
+  let facets = Object.keys(groupings_options).filter(g => g !== 'total');
+  facets.push('région');
+  return facets;
+}
+
+// Returns a list of {grouping, group, region} objects to compare for a given facet
+function get_facet_elements(facet) {
+  if (facet === 'région') {
+    return [
+      {grouping: 'total', group: 'total', region: 'BE', label: 'BE'},
+      {grouping: 'total', group: 'total', region: 'FL', label: 'FL'},
+      {grouping: 'total', group: 'total', region: 'BXL', label: 'BXL'},
+      {grouping: 'total', group: 'total', region: 'WAL', label: 'WAL'},
+    ];
+  } else {
+
+    const groups_labels = {
+      "Revenus inférieurs au quartile 25": 'Q1', 
+      "Revenus entre quartile 25 et quartile 50": 'Q2', 
+      "Revenus entre quartile 50 et quartile 75": 'Q3',
+      "Revenus supérieurs au quartile 75": 'Q4',
+      "Propriétaire": "Propriétaire", 
+      "Locataire": 'Locataire',
+      "Avec enfant(s)": 'Avec', 
+      "Sans enfant": 'Sans',
+      "Personne seule": 'Seul·e',
+      "2 adultes": '2 A',
+      "3 adultes ou plus": '3+ A',
+      "1 adulte avec enfant(s) dépendant(s)": '1 A + E',
+      "2 adultes avec  enfant(s) dépendant(s)": '2 A + E',
+      "3 adultes ou plus avec enfant(s) dépendant(s)": '3+ A + E',
+    };
+
+    let elements = [{grouping: 'total', group: 'total', region: 'BE', label: 'Tou·tes'}];
+    for (let g of groupings_options[facet]) {
+      elements.push({grouping: facet, group: g, region: 'BE', label: groups_labels[g] ? groups_labels[g] : g});
+    }
+    return elements;
+  }
+}
+
+
+export {
+  get_closest_index, 
+  get_spendings, 
+  groupings_options, 
+  get_deviation_from_base_rate, 
+  get_children, 
+  get_max_relative_spending,
+  get_facets,
+  get_facet_elements,
+};
