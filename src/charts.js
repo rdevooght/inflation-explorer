@@ -49,6 +49,7 @@ function CPITimeline(props) {
             // stroke: "deviation",
             stroke: "steelblue",
             strokeWidth: 2,
+            tip: true
           }),
           Plot.line(baseline, {
             x: "date", 
@@ -65,7 +66,8 @@ function CPITimeline(props) {
           range: ["#00ff00", "#0000ff", "#ff0000"], 
           legend: false,
         },*/
-        x: {type: "time", format: "%Y-%m-%d", domain: ['2011-06-01', '2022-05-31']},
+        x: {type: "time", format: "%Y-%m-%d"},
+        // x: {type: "time", format: "%Y-%m-%d", domain: ['2011-06-01', '2023-08-31']},
         y: {label: null, grid: true, domain: [0, max_value]},
       });
       chartRef.current.append(chart);

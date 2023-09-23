@@ -36,6 +36,9 @@ for level in range(1, 5):
             ].drop_duplicates().rename(columns={f'TX_COICOP_FR_LVL{level}': 'name'}).set_index('CD_COICOP').to_dict(orient='index')
     )
 
+## manual correction
+products['10500']['name'] = 'Education not definable by level'
+
 # Remove the numbering from the categories names
 for k, v in products.items():
     v['name'] = re.sub('^\d+\. ', '', v['name'])
