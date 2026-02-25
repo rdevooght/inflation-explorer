@@ -17,7 +17,7 @@ import "dayjs/locale/fr";
 
 import data from "./data.json";
 import { search, exact_match } from "./search";
-import { shorten } from "./util";
+import { shorten, percentFormater, numberFormater } from "./util";
 import {
   get_closest_index,
   get_spendings,
@@ -27,7 +27,7 @@ import {
   get_facets,
   get_facet_elements,
 } from "./handleData";
-import { CPITimeline, BarChart } from "./charts";
+import { CPITimeline, BarChart, LineChart } from "./charts";
 
 const YEARS = [2014, 2016, 2018, 2020, 2022, 2024];
 
@@ -253,6 +253,7 @@ function EBMComparison(props) {
             data={relative_consumption}
             x={{ label: null }}
             y={{ label: null, grid: true, tickFormat: "p" }}
+            text_format={(d) => `${percentFormater(d.y)}`}
           />
         </div>
         <div className="col">
@@ -413,7 +414,12 @@ function EBMSummary(props) {
   const abs_y =
     max_consumption < 1
       ? { label: null, grid: true, percent: true, domain: [0, 100] }
-      : { label: null, grid: true, percent: true };
+      : {
+          label: null,
+          grid: true,
+          percent: true,
+          domain: [0, 100 * max_consumption],
+        };
 
   const part_budget_helper = (
     <Popover id="popover-basic">
@@ -489,15 +495,20 @@ function EBMSummary(props) {
               </span>
             </OverlayTrigger>
           </h4>
-          <BarChart
+          <LineChart
             data={relative_consumption}
-            x={{ label: null }}
+            x={{
+              label: null,
+              ticks: YEARS,
+              tickFormat: (d) => `${d}`,
+            }}
             y={{
               label: null,
               grid: true,
               tickFormat: "p",
               domain: [0, max_relative_spending],
             }}
+            text_format={(d) => `${percentFormater(d.y)}`}
           />
         </div>
         <div className="col">
@@ -515,7 +526,16 @@ function EBMSummary(props) {
               </span>
             </OverlayTrigger>
           </h4>
-          <BarChart data={absolute_consumption} x={{ label: null }} y={abs_y} />
+          <LineChart
+            data={absolute_consumption}
+            x={{
+              label: null,
+              ticks: YEARS,
+              tickFormat: (d) => `${d}`,
+            }}
+            y={abs_y}
+            text_format={(d) => `${numberFormater(d.y * 100)}`}
+          />
         </div>
       </div>
     </div>

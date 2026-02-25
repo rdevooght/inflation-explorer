@@ -208,4 +208,55 @@ function BarChart(props) {
   return <div className="chart" ref={chartRef}></div>;
 }
 
-export { CPITimeline, BarChart };
+/**
+ * Draw a line chart
+ * @param {*} props
+ * the props must contain the following properties:
+ * - data: an array of {x, y} objects
+ * - width: the width of the chart (if left unspecified, the width of the parent element is used)
+ */
+function LineChart(props) {
+  const chartRef = useRef();
+
+  useEffect(() => {
+    const width = props.width ? props.width : chartRef.current.clientWidth;
+    const x = props.x ? props.x : {};
+    const y = props.y ? props.y : {};
+    const text_format = props.text_format
+      ? props.text_format
+      : (d) => `${(d.y * 100).toFixed(1)}`;
+
+    const chart = Plot.plot({
+      height: Math.min(width * 0.6, 400),
+      width: width,
+      marginLeft: 50,
+      style: {
+        fontSize: "14px",
+      },
+      marks: [
+        Plot.line(props.data, {
+          x: "x",
+          y: "y",
+          stroke: "steelblue",
+          strokeWidth: 2,
+          marker: true,
+          tip: false,
+        }),
+        Plot.text(props.data, {
+          x: "x",
+          y: "y",
+          text: text_format,
+          dy: -10,
+        }),
+      ],
+      y: y,
+      x: x,
+    });
+    chartRef.current.append(chart);
+    return () => chart.remove();
+  });
+
+  return <div className="chart" ref={chartRef}></div>;
+}
+
+export { CPITimeline, BarChart, LineChart };
