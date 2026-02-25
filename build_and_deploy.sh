@@ -12,5 +12,8 @@ fi
 npm run build
 # add clouflare analytics
 sed -i "s|</html>|{% include 'analytics.njk' %}</html>|" build/index.html
+sed -i "s|https://blog\.robindevooght\.be/posts/search-inflation/|{{ metadata.url }}{{page.url}}|g" build/index.html
+sed -i "s#https://blog\.robindevooght\.be/\([^\"]*\)#{{ '/\1' | url }}#g" build/index.html
 rm -rf "/home/robin/Dropbox/Projets divers/blog/rdevooght.github.io/posts/search-inflation/static"
 cp -r build/* "/home/robin/Dropbox/Projets divers/blog/rdevooght.github.io/posts/search-inflation/"
+mv "/home/robin/Dropbox/Projets divers/blog/rdevooght.github.io/posts/search-inflation/index.html" "/home/robin/Dropbox/Projets divers/blog/rdevooght.github.io/posts/search-inflation/index.njk"
