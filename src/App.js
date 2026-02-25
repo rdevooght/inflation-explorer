@@ -200,6 +200,8 @@ function EBMComparison(props) {
 
   let absolute_consumption = [];
   let relative_consumption = [];
+  let absolute_baseline;
+  let relative_baseline;
 
   for (let elem of get_facet_elements(facet)) {
     let spendings = get_spendings(
@@ -210,9 +212,18 @@ function EBMComparison(props) {
       elem.group,
     );
     if (spendings !== undefined) {
-      absolute_consumption.push({ x: elem.label, y: spendings[0] });
+      const is_baseline =
+        elem.grouping === "total" &&
+        elem.group === "total" &&
+        ((facet === "région" && elem.region === "BE") || facet !== "région");
 
-      relative_consumption.push({ x: elem.label, y: spendings[1] });
+      if (is_baseline) {
+        absolute_baseline = spendings[0];
+        relative_baseline = spendings[1];
+      } else {
+        absolute_consumption.push({ x: elem.label, y: spendings[0] });
+        relative_consumption.push({ x: elem.label, y: spendings[1] });
+      }
     }
   }
 
@@ -254,7 +265,14 @@ function EBMComparison(props) {
             x={{ label: null }}
             y={{ label: null, grid: true, tickFormat: "p" }}
             text_format={(d) => `${percentFormater(d.y)}`}
+            reference_y={relative_baseline}
           />
+          {relative_baseline !== undefined && (
+            <p className="small text-muted mt-2 mb-0">
+              Ligne pointillée: moyenne belge (
+              {percentFormater(relative_baseline)})
+            </p>
+          )}
         </div>
         <div className="col">
           <h4 className="d-flex justify-content-between align-items-start">
@@ -275,8 +293,15 @@ function EBMComparison(props) {
             data={absolute_consumption}
             x={{ label: null }}
             y={{ label: null, grid: true }}
-            text_format={(d) => `${d.y} €`}
+            text_format={(d) => `${numberFormater(d.y)} €`}
+            reference_y={absolute_baseline}
           />
+          {absolute_baseline !== undefined && (
+            <p className="small text-muted mt-2 mb-0">
+              Ligne pointillée: moyenne belge ({numberFormater(absolute_baseline)}{" "}
+              €)
+            </p>
+          )}
         </div>
       </div>
       {facet === "type de ménage eurostat" && (

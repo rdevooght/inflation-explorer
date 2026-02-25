@@ -182,6 +182,24 @@ function BarChart(props) {
     const text_format = props.text_format
       ? props.text_format
       : (d) => `${(d.y * 100).toFixed(1)}`;
+    const marks = [
+      Plot.barY(props.data, {
+        x: "x",
+        y: "y",
+        fill: "steelblue",
+      }),
+      Plot.text(props.data, { x: "x", y: "y", text: text_format, dy: -10 }),
+    ];
+
+    if (props.reference_y !== undefined) {
+      marks.push(
+        Plot.ruleY([props.reference_y], {
+          stroke: "black",
+          strokeDasharray: "4,4",
+          strokeWidth: 2,
+        }),
+      );
+    }
 
     const chart = Plot.plot({
       height: Math.min(width * 0.6, 400),
@@ -190,14 +208,7 @@ function BarChart(props) {
       style: {
         fontSize: "14px",
       },
-      marks: [
-        Plot.barY(props.data, {
-          x: "x",
-          y: "y",
-          fill: "steelblue",
-        }),
-        Plot.text(props.data, { x: "x", y: "y", text: text_format, dy: -10 }),
-      ],
+      marks: marks,
       y: y,
       x: x,
     });
