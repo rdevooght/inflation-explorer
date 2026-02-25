@@ -8,6 +8,7 @@ from unidecode import unidecode
 
 STATBEL_FOLDER = "../../données statbel/"
 START_DATE = pd.to_datetime("2012-01-01")
+MAX_LEVEL = 4
 
 round_to_n = lambda x, n: 0 if x == 0 else round(x, -int(math.floor(math.log10(x))) + (n - 1))
 
@@ -25,27 +26,27 @@ print("Extract categories from CPI data...")
 df["date"] = pd.to_datetime(df.NM_YR.astype(str) + "-" + df.NM_MTH.astype(str) + "-01")
 df["CD_COICOP"] = df.CD_COICOP.apply(lambda x: x.replace(".", "").replace("-", "0") if isinstance(x, str) else x)
 df["coicop"] = df.CD_COICOP
-df["level"] = df.coicop.str.len() - 1
 
 products = {"0": {"coicop": "0", "name": "Tous les produits", "level": "0"}}
 
-for level in range(1, 5):
+for level in range(1, MAX_LEVEL + 1):
     products.update(
-        df.loc[df.NM_CD_COICOP_LVL == level, ["CD_COICOP", "coicop", f"TX_COICOP_FR_LVL{level}", "level"]]
+        df.loc[df.NM_CD_COICOP_LVL == level, ["CD_COICOP", "coicop", f"TX_COICOP_FR_LVL{level}", "NM_CD_COICOP_LVL"]]
         .drop_duplicates()
-        .rename(columns={f"TX_COICOP_FR_LVL{level}": "name"})
+        .rename(columns={f"TX_COICOP_FR_LVL{level}": "name", "NM_CD_COICOP_LVL": "level"})
         .set_index("CD_COICOP")
         .to_dict(orient="index")
     )
 
-## manual correction
-products["10500"]["name"] = "Education not definable by level"
+## manual correction (not needed anymore, they removed that item)
+# products["10500"]["name"] = "Education not definable by level"
 
 # Remove the numbering from the categories names
 for k, v in products.items():
-    v["name"] = re.sub("^\d+\. ", "", v["name"])
+    v["name"] = re.sub(r"^\d+\. ", "", v["name"])
 
 DATA["products"] = products
+
 
 # Extract the evolution of the index for each category
 
@@ -68,7 +69,10 @@ def add_timescale(timescale):
     return len(timescales) - 1
 
 
-for coicop, index in df.loc[df.date >= START_DATE, ["coicop", "date", "MS_CPI_IDX"]].groupby(["coicop"]):
+for coicop, index in df.loc[
+    (df.date >= START_DATE) & (df.NM_CD_COICOP_LVL <= MAX_LEVEL), ["coicop", "date", "MS_CPI_IDX"]
+].groupby(["coicop"]):
+    coicop = coicop[0]
     values = index.to_dict(orient="records")
     timescale_id = add_timescale([v["date"].strftime("%Y-%m-%d") for v in values])
     values = [round_to_n(v["MS_CPI_IDX"], 3) for v in values]
@@ -125,7 +129,11 @@ def find_closest_grouping(approx_grouping_name):
 
 
 def get_file_and_sheet(year, group, region="BE"):
-    if year == 2020:
+    if year == 2024:
+        file = STATBEL_FOLDER + "EBM/EBM_2024_FR_02SEP25.XLSX"
+    elif year == 2022:
+        file = STATBEL_FOLDER + "EBM/EBM_0113_2022_FR_20SEP23.XLSX"
+    elif year == 2020:
         file = STATBEL_FOLDER + "EBM/EBM_0113_2020_FR_07SEP21.XLSX"
     elif year == 2018:
         file = STATBEL_FOLDER + "EBM/EBM_0113_2018_FR_19NOV19.XLSX"
@@ -248,7 +256,7 @@ def percent_and_abs(df):
 
 spendings = []
 
-for year in range(2012, 2022, 2):
+for year in range(2012, 2026, 2):
     for region in ["BE", "BXL", "WAL", "FL"]:
         print(f"Region {region}, year {year}...")
         for grouping in groupings:
