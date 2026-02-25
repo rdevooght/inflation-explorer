@@ -29,11 +29,11 @@ import {
 } from "./handleData";
 import { CPITimeline, BarChart } from "./charts";
 
-const YEARS = [2012, 2014, 2016, 2018, 2020];
-// const YEARS = [2014, 2016, 2018, 2020, 2022, 2024];
+// const YEARS = [2012, 2014, 2016, 2018, 2020];
+const YEARS = [2014, 2016, 2018, 2020, 2022, 2024];
 
 function SearchExamples(props) {
-  const examples = ["Loyer", "Pain", "Diesel", "Bière", "Assurance voyage"];
+  const examples = ["Loyer", "Pain", "Essence", "Bière", "Assurance voyage"];
 
   return (
     <Stack
