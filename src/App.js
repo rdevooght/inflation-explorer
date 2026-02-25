@@ -29,7 +29,6 @@ import {
 } from "./handleData";
 import { CPITimeline, BarChart } from "./charts";
 
-// const YEARS = [2012, 2014, 2016, 2018, 2020];
 const YEARS = [2014, 2016, 2018, 2020, 2022, 2024];
 
 function SearchExamples(props) {
@@ -155,18 +154,18 @@ function YearSelector(props) {
   const years = YEARS;
 
   return (
-    <FloatingLabel label="Année">
-      <Form.Select
-        value={props.value}
-        onChange={(e) => props.onChange(parseInt(e.target.value))}
-      >
-        {years.map((year) => (
-          <option key={year} value={year}>
-            {year}
-          </option>
-        ))}
-      </Form.Select>
-    </FloatingLabel>
+    <div className="d-flex flex-wrap gap-1 gap-sm-2 align-items-center justify-content-center flex-fill">
+      {years.map((year) => (
+        <Button
+          key={year}
+          variant={props.value === year ? "dark" : "outline-dark"}
+          className="rounded-pill btn-sm"
+          onClick={() => props.onChange(year)}
+        >
+          {year}
+        </Button>
+      ))}
+    </div>
   );
 }
 
@@ -237,11 +236,11 @@ function EBMComparison(props) {
   return (
     <div className="my-5">
       <h3>Comparaison de groupes</h3>
-      <Row className="my-2">
+      <Row className="my-4 my-sm-2 row-cols-1 row-cols-sm-2 gap-3 gap-sm-0">
         <Col>
           <FacetSelector value={facet} onChange={setFacet} />
         </Col>
-        <Col>
+        <Col className="d-flex align-items-center">
           <YearSelector value={year} onChange={setYear} />
         </Col>
       </Row>
@@ -304,18 +303,18 @@ function RegionSelector(props) {
   };
 
   return (
-    <FloatingLabel label="Région">
-      <Form.Select
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
-      >
-        {Object.keys(regions).map((region) => (
-          <option key={region} value={region}>
-            {regions[region]}
-          </option>
-        ))}
-      </Form.Select>
-    </FloatingLabel>
+    <div className="d-flex flex-wrap gap-1 gap-sm-2 align-items-center justify-content-center flex-fill">
+      {Object.keys(regions).map((region) => (
+        <Button
+          key={region}
+          variant={props.value === region ? "dark" : "outline-dark"}
+          className="rounded-pill btn-sm"
+          onClick={() => props.onChange(region)}
+        >
+          {regions[region]}
+        </Button>
+      ))}
+    </div>
   );
 }
 
@@ -466,11 +465,11 @@ function EBMSummary(props) {
   return (
     <div className="my-5">
       <h3>Evolution de la consommation</h3>
-      <Row className="my-2">
+      <Row className="my-4 my-sm-2 row-cols-1 row-cols-sm-2 gap-3 gap-sm-0">
         <Col>
           <GroupSelector value={group} onChange={setGroup} />
         </Col>
-        <Col>
+        <Col className="d-flex align-items-center">
           <RegionSelector value={region} onChange={setRegion} />
         </Col>
       </Row>
@@ -752,7 +751,7 @@ class App extends React.Component {
         : data.products[this.state.query].name;
 
     return (
-      <div id="searchApp" className="p-3">
+      <div id="searchApp" className="py-3 px-1 px-sm-0">
         <SearchInput query={input} onChange={this.onInputChange} />
         <SearchResults results={results} setCOICOP={this.setCOICOP} />
       </div>
