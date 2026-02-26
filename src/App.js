@@ -17,7 +17,12 @@ import "dayjs/locale/fr";
 
 import data from "./data.json";
 import { search, exact_match } from "./search";
-import { shorten, percentFormater, numberFormater } from "./util";
+import {
+  shorten,
+  percentFormatter,
+  numberFormatter,
+  getDateDuration,
+} from "./util";
 import {
   get_closest_index,
   get_spendings,
@@ -116,21 +121,6 @@ function BreadCrumb(props) {
     breadcrumb.push(data.products[props.coicop.slice(0, i)]);
   }
   breadcrumb.push(data.products["0"]);
-
-  const parent = breadcrumb[0];
-  /*return (
-    <div>
-      Hierarchie:
-      {(breadcrumb.length > 1) && " ... ›"}
-      &nbsp;
-      <a
-        href={`#${parent.coicop}`}
-        onClick={() => props.setCOICOP(parent.coicop)}
-        title={parent.name}
-      >{shorten(parent.name, 24)}</a>
-      &nbsp; &rsaquo;
-    </div>
-  )*/
 
   return (
     <div>
@@ -264,13 +254,13 @@ function EBMComparison(props) {
             data={relative_consumption}
             x={{ label: null }}
             y={{ label: null, grid: true, tickFormat: "p" }}
-            text_format={(d) => `${percentFormater(d.y)}`}
+            text_format={(d) => `${percentFormatter(d.y)}`}
             reference_y={relative_baseline}
           />
           {relative_baseline !== undefined && (
             <p className="small text-muted mt-2 mb-0">
               Ligne pointillée: moyenne belge (
-              {percentFormater(relative_baseline)})
+              {percentFormatter(relative_baseline)})
             </p>
           )}
         </div>
@@ -293,13 +283,13 @@ function EBMComparison(props) {
             data={absolute_consumption}
             x={{ label: null }}
             y={{ label: null, grid: true }}
-            text_format={(d) => `${numberFormater(d.y)} €`}
+            text_format={(d) => `${numberFormatter(d.y)} €`}
             reference_y={absolute_baseline}
           />
           {absolute_baseline !== undefined && (
             <p className="small text-muted mt-2 mb-0">
-              Ligne pointillée: moyenne belge ({numberFormater(absolute_baseline)}{" "}
-              €)
+              Ligne pointillée: moyenne belge (
+              {numberFormatter(absolute_baseline)} €)
             </p>
           )}
         </div>
@@ -533,7 +523,7 @@ function EBMSummary(props) {
               tickFormat: "p",
               domain: [0, max_relative_spending],
             }}
-            text_format={(d) => `${percentFormater(d.y)}`}
+            text_format={(d) => `${percentFormatter(d.y)}`}
           />
         </div>
         <div className="col">
@@ -559,7 +549,7 @@ function EBMSummary(props) {
               tickFormat: (d) => `${d}`,
             }}
             y={abs_y}
-            text_format={(d) => `${numberFormater(d.y * 100)}`}
+            text_format={(d) => `${numberFormatter(d.y * 100)}`}
           />
         </div>
       </div>
@@ -599,16 +589,24 @@ function CPITextSummary(props) {
     true,
   );
   const base_date = dayjs(most_recent_date);
-  const [previous_year_CPI, previous_year_date] = get_closest_index(
+  const previous_year_CPI = get_closest_index(
     props.coicop,
     base_date.subtract(1, "year").format("YYYY-MM"),
-    true,
+    false,
   );
   const [previous_decade_CPI, previous_decade_date] = get_closest_index(
     props.coicop,
     base_date.subtract(10, "year").format("YYYY-MM"),
     true,
   );
+
+  console.log({
+    most_recent_CPI,
+    most_recent_date,
+    previous_year_CPI,
+    previous_decade_CPI,
+    previous_decade_date,
+  });
 
   const year_ev = (most_recent_CPI - previous_year_CPI) / previous_year_CPI;
   const decade_ev =
@@ -641,8 +639,8 @@ function CPITextSummary(props) {
   return (
     <p className="my-3">
       En {base_date.locale("fr").format("MMMM YYYY")}, le prix du produit est{" "}
-      {evolution_text(year_ev)} an plus tôt, et {evolution_text(decade_ev)}{" "}
-      {base_date.year() - dayjs(previous_decade_date).year()} ans plus tôt.
+      {evolution_text(year_ev)} 1 an plus tôt, et {evolution_text(decade_ev)}{" "}
+      {getDateDuration(previous_decade_date, most_recent_date)} plus tôt.
     </p>
   );
 }

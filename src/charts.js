@@ -1,8 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import * as Plot from "@observablehq/plot";
+import dayjs from "dayjs";
 
 import data from "./data.json";
-import { shorten } from "./util";
+import {
+  shorten,
+  signedPercentFormatter,
+  monthYearFormatter,
+  getDateDuration,
+  averageYearlyInflation,
+} from "./util";
+import { get_closest_index } from "./handleData";
 
 function get_CPI_values(coicop) {
   const timescale = data.timescales[data.products[coicop].timescale];
@@ -12,7 +20,7 @@ function get_CPI_values(coicop) {
   // const step_dev = d => (d > 0) ? 1 : (d === 0) ? 0 : -1;
 
   let norm = data.products[coicop].CPI[0];
-  if (timescale[0] != "2012-01-01") {
+  if (timescale[0] !== "2012-01-01") {
     let months_since_2013 =
       (parseInt(timescale[0].split("-")[0]) - 2013) * 12 +
       parseInt(timescale[0].split("-")[1]) -
@@ -27,28 +35,8 @@ function get_CPI_values(coicop) {
   }));
 }
 
-const MONTHS_FR = [
-  "jan.",
-  "fevr.",
-  "mars",
-  "avr.",
-  "mai",
-  "juin",
-  "juil.",
-  "aout",
-  "sept.",
-  "oct.",
-  "nov.",
-  "dec.",
-];
-
-function format_date_fr_short(dateStr) {
-  const d = new Date(dateStr);
-  return `${d.getUTCDate()} ${MONTHS_FR[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
-
 function get_closest_point(values, targetDate) {
-  const target = targetDate.getTime();
+  const target = new Date(targetDate).getTime();
   let best = values[0];
   let bestDist = Math.abs(new Date(best.date).getTime() - target);
 
@@ -70,39 +58,41 @@ function CPITimeline(props) {
   useEffect(() => {
     const values = get_CPI_values(props.coicop);
     const baseline = get_CPI_values("0");
-    const valuesWithTooltip = values.map((d) => ({
-      ...d,
-      title: `${format_date_fr_short(d.date)}: ${d.cpi.toFixed(1)}`,
-    }));
 
+    const lastcpi = values[values.length - 1].cpi;
     const lastDate = new Date(values[values.length - 1].date);
-    const oneYearBefore = new Date(
-      Date.UTC(
-        lastDate.getUTCFullYear() - 1,
-        lastDate.getUTCMonth(),
-        lastDate.getUTCDate(),
-      ),
+
+    const base_date = dayjs(lastDate);
+    const markerOneYear = get_closest_point(
+      values,
+      base_date.subtract(1, "year").format("YYYY-MM-DD"),
     );
-    const tenYearsBefore = new Date(
-      Date.UTC(
-        lastDate.getUTCFullYear() - 10,
-        lastDate.getUTCMonth(),
-        lastDate.getUTCDate(),
-      ),
+    const markerTenYears = get_closest_point(
+      values,
+      base_date.subtract(10, "year").format("YYYY-MM-DD"),
     );
 
-    const markerOneYear = get_closest_point(values, oneYearBefore);
-    const markerTenYears = get_closest_point(values, tenYearsBefore);
     const markers = [
-      { ...markerTenYears, label: "10 ans\nplus tôt" },
+      {
+        ...markerTenYears,
+        label: `${getDateDuration(markerTenYears.date, lastDate)}\nplus tôt`,
+      },
       { ...markerOneYear, label: "1 an\nplus tôt" },
     ];
+
     const max_value = Math.max(
       ...values.map((v) => v.cpi),
       ...baseline.map((v) => v.cpi),
     );
 
     const width = chartRef.current.clientWidth;
+
+    function getLegend(d) {
+      if (new Date(d.date).getTime() === lastDate.getTime()) {
+        return "";
+      }
+      return `De ${monthYearFormatter(d.date)} à ${monthYearFormatter(lastDate)}\n${signedPercentFormatter((lastcpi - d.cpi) / d.cpi)} en ${getDateDuration(d.date, lastDate)} (${signedPercentFormatter(averageYearlyInflation(d.date, lastDate, d.cpi, lastcpi))} par an)`;
+    }
 
     const chart = Plot.plot({
       height: Math.min(width * 0.7, 400),
@@ -111,13 +101,12 @@ function CPITimeline(props) {
         fontSize: "14px",
       },
       marks: [
-        Plot.line(valuesWithTooltip, {
+        Plot.line(values, {
           x: "date",
           y: "cpi",
-          title: "title",
           stroke: "steelblue",
           strokeWidth: 2,
-          tip: true,
+          tip: false,
         }),
         Plot.line(baseline, {
           x: "date",
@@ -141,6 +130,38 @@ function CPITimeline(props) {
           fontWeight: "bold",
           textAnchor: "middle",
         }),
+        Plot.ruleX(
+          values,
+          Plot.pointerX({ x: "date", py: "cpi", stroke: "black" }),
+        ),
+        Plot.dot(
+          values,
+          Plot.pointerX({ x: "date", y: "cpi", stroke: "black" }),
+        ),
+        Plot.text(
+          values,
+          Plot.pointerX({
+            px: "date",
+            py: "cpi",
+            dy: -20,
+            dx: 10,
+            frameAnchor: "bottom-left",
+            fontVariant: "tabular-nums",
+            text: (d) => getLegend(d),
+          }),
+        ),
+        Plot.text(
+          values,
+          Plot.pointerX({
+            x: "date",
+            y: "cpi",
+            dy: 10,
+            dx: 10,
+            text: (d) => `${monthYearFormatter(d.date)}\n${d.cpi.toFixed(1)}`,
+            textAnchor: "start",
+            lineAnchor: "top",
+          }),
+        ),
       ],
       x: { type: "time", format: "%Y-%m-%d" },
       y: { label: null, grid: true, domain: [0, max_value + 15] },
