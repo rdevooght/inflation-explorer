@@ -210,6 +210,7 @@ function BarChart(props) {
     const width = props.width ? props.width : chartRef.current.clientWidth;
     const x = props.x ? props.x : {};
     const y = props.y ? props.y : {};
+    x.padding = 0.3;
     const text_format = props.text_format
       ? props.text_format
       : (d) => `${(d.y * 100).toFixed(1)}`;
@@ -219,7 +220,6 @@ function BarChart(props) {
         y: "y",
         fill: "steelblue",
       }),
-      Plot.text(props.data, { x: "x", y: "y", text: text_format, dy: -10 }),
     ];
 
     if (props.reference_y !== undefined) {
@@ -231,6 +231,20 @@ function BarChart(props) {
         }),
       );
     }
+
+    marks.push(
+      Plot.text(props.data, {
+        x: "x",
+        y: "y",
+        text: text_format,
+        dy: -10,
+        fill: "black",
+        stroke: "white", // halo color
+        strokeWidth: 5, // halo thickness
+        strokeLinejoin: "round",
+        paintOrder: "stroke",
+      }),
+    );
 
     const chart = Plot.plot({
       height: Math.min(width * 0.6, 400),
