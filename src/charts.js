@@ -91,7 +91,17 @@ function CPITimeline(props) {
       if (new Date(d.date).getTime() === lastDate.getTime()) {
         return "";
       }
-      return `De ${monthYearFormatter(d.date)} à ${monthYearFormatter(lastDate)}\n${signedPercentFormatter((lastcpi - d.cpi) / d.cpi)} en ${getDateDuration(d.date, lastDate)} (${signedPercentFormatter(averageYearlyInflation(d.date, lastDate, d.cpi, lastcpi))} par an)`;
+
+      let legend = `De ${monthYearFormatter(d.date)} à ${monthYearFormatter(lastDate)}
+${signedPercentFormatter((lastcpi - d.cpi) / d.cpi)} en ${getDateDuration(d.date, lastDate)} (${signedPercentFormatter(averageYearlyInflation(d.date, lastDate, d.cpi, lastcpi))} par an)`;
+
+      if (props.coicop !== "0") {
+        const global_cpi = get_closest_point(baseline, d.date).cpi;
+        const last_global_cpi = baseline[baseline.length - 1].cpi;
+        legend += `\nSur cette période, l'inflation globale est de ${signedPercentFormatter((last_global_cpi - global_cpi) / global_cpi)} (${signedPercentFormatter(averageYearlyInflation(d.date, lastDate, global_cpi, last_global_cpi))} par an)`;
+      }
+
+      return legend;
     }
 
     const chart = Plot.plot({
