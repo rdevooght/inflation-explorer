@@ -267,15 +267,67 @@ function LineChart(props) {
     const text_format = props.text_format
       ? props.text_format
       : (d) => `${(d.y * 100).toFixed(1)}`;
+    const hasSeries = props.series !== undefined;
+    const highlightedSeries = props.highlightedSeries;
+    const marks = [];
 
-    const chart = Plot.plot({
-      height: Math.min(width * 0.6, 400),
-      width: width,
-      marginLeft: 50,
-      style: {
-        fontSize: "14px",
-      },
-      marks: [
+    if (hasSeries) {
+      const availableSeries = Object.keys(props.series).filter((seriesKey) =>
+        props.data.some((d) => d.series === seriesKey),
+      );
+      const mutedSeries = availableSeries.filter(
+        (seriesKey) => seriesKey !== highlightedSeries,
+      );
+
+      mutedSeries.forEach((seriesKey) => {
+        const seriesData = props.data.filter((d) => d.series === seriesKey);
+        marks.push(
+          Plot.line(seriesData, {
+            x: "x",
+            y: "y",
+            stroke: props.series[seriesKey].color,
+            strokeOpacity: 0.2,
+            marker: true,
+            markerFillOpacity: 0.2,
+            markerStrokeOpacity: 0.2,
+            strokeWidth: 1.4,
+            tip: false,
+          }),
+        );
+      });
+
+      const highlightedData = props.data.filter(
+        (d) => d.series === highlightedSeries,
+      );
+      if (highlightedData.length > 0) {
+        marks.push(
+          Plot.line(highlightedData, {
+            x: "x",
+            y: "y",
+            stroke: props.series[highlightedSeries].color,
+            strokeWidth: 2,
+            marker: true,
+            tip: false,
+            title: text_format,
+          }),
+        );
+        marks.push(
+          Plot.text(highlightedData, {
+            x: "x",
+            y: "y",
+            text: text_format,
+            dy: -15,
+            fill: props.series[highlightedSeries].color,
+            fontWeight: "bold",
+            stroke: "white", // halo color
+            strokeWidth: 5, // halo thickness
+            strokeLinejoin: "round",
+            paintOrder: "stroke",
+          }),
+        );
+      }
+    } else {
+      marks.push(
         Plot.line(props.data, {
           x: "x",
           y: "y",
@@ -284,13 +336,25 @@ function LineChart(props) {
           marker: true,
           tip: false,
         }),
+      );
+      marks.push(
         Plot.text(props.data, {
           x: "x",
           y: "y",
           text: text_format,
           dy: -10,
         }),
-      ],
+      );
+    }
+
+    const chart = Plot.plot({
+      height: Math.min(width * 0.6, 400),
+      width: width,
+      marginLeft: 50,
+      style: {
+        fontSize: "14px",
+      },
+      marks: marks,
       y: y,
       x: x,
     });

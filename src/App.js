@@ -35,6 +35,12 @@ import {
 import { CPITimeline, BarChart, LineChart } from "./charts";
 
 const YEARS = [2014, 2016, 2018, 2020, 2022, 2024];
+const REGION_CONFIG = {
+  BE: { label: "Belgique", color: "#000000" },
+  BXL: { label: "Bruxelles", color: "#7b1fa2" },
+  FL: { label: "Flandre", color: "#f2c300" },
+  WAL: { label: "Wallonie", color: "#d32f2f" },
+};
 
 function SearchExamples(props) {
   const examples = ["Loyer", "Pain", "Essence", "Bière", "Assurance voyage"];
@@ -311,25 +317,36 @@ function EBMComparison(props) {
 }
 
 function RegionSelector(props) {
-  const regions = {
-    BE: "Belgique",
-    BXL: "Bruxelles",
-    FL: "Flandre",
-    WAL: "Wallonie",
-  };
+  const availableRegions = props.availableRegions
+    ? new Set(props.availableRegions)
+    : null;
 
   return (
     <div className="d-flex flex-wrap gap-1 gap-sm-2 align-items-center justify-content-center flex-fill">
-      {Object.keys(regions).map((region) => (
-        <Button
-          key={region}
-          variant={props.value === region ? "dark" : "outline-dark"}
-          className="rounded-pill btn-sm"
-          onClick={() => props.onChange(region)}
-        >
-          {regions[region]}
-        </Button>
-      ))}
+      {Object.keys(REGION_CONFIG).map((region) => {
+        const isSelected = props.value === region;
+        const color = REGION_CONFIG[region].color;
+        const isAvailable =
+          availableRegions === null || availableRegions.has(region);
+
+        return (
+          <Button
+            key={region}
+            variant="outline-dark"
+            disabled={!isAvailable}
+            className="rounded-pill btn-sm"
+            onClick={() => props.onChange(region)}
+            style={{
+              borderColor: color,
+              color: isSelected ? (region === "FL" ? "#111111" : "#ffffff") : color,
+              backgroundColor: isSelected ? color : "transparent",
+              opacity: isAvailable ? 1 : 0.45,
+            }}
+          >
+            {REGION_CONFIG[region].label}
+          </Button>
+        );
+      })}
     </div>
   );
 }
@@ -400,30 +417,40 @@ function EBMSummary(props) {
     }
   }
 
-  for (let year of YEARS) {
-    let spendings = get_spendings(
-      props.coicop,
-      year,
-      region,
-      group[0],
-      group[1],
-    );
-    if (spendings !== undefined) {
-      const cpi = get_closest_index(props.coicop, `${year}-06`);
-
-      absolute_consumption.push({
-        x: year,
-        y: spendings[0] / cpi / normaliser,
-      });
-
-      max_consumption = Math.max(
-        max_consumption,
-        spendings[0] / cpi / normaliser,
+  for (let regionKey of Object.keys(REGION_CONFIG)) {
+    for (let year of YEARS) {
+      let spendings = get_spendings(
+        props.coicop,
+        year,
+        regionKey,
+        group[0],
+        group[1],
       );
+      if (spendings !== undefined) {
+        const cpi = get_closest_index(props.coicop, `${year}-06`);
 
-      relative_consumption.push({ x: year, y: spendings[1] });
+        absolute_consumption.push({
+          x: year,
+          y: spendings[0] / cpi / normaliser,
+          series: regionKey,
+        });
+
+        max_consumption = Math.max(
+          max_consumption,
+          spendings[0] / cpi / normaliser,
+        );
+
+        relative_consumption.push({ x: year, y: spendings[1], series: regionKey });
+      }
     }
   }
+
+  const availableRegions = Object.keys(REGION_CONFIG).filter((regionKey) =>
+    relative_consumption.some((d) => d.series === regionKey),
+  );
+  const highlightedRegion = availableRegions.includes(region)
+    ? region
+    : availableRegions[0];
 
   // Ensures that the scale of the graph of real consumption goes at least to 100
   const abs_y =
@@ -491,7 +518,11 @@ function EBMSummary(props) {
           <GroupSelector value={group} onChange={setGroup} />
         </Col>
         <Col className="d-flex align-items-center">
-          <RegionSelector value={region} onChange={setRegion} />
+          <RegionSelector
+            value={highlightedRegion}
+            onChange={setRegion}
+            availableRegions={availableRegions}
+          />
         </Col>
       </Row>
       <div className="row row-cols-1 row-cols-sm-2">
@@ -512,6 +543,8 @@ function EBMSummary(props) {
           </h4>
           <LineChart
             data={relative_consumption}
+            series={REGION_CONFIG}
+            highlightedSeries={highlightedRegion}
             x={{
               label: null,
               ticks: YEARS,
@@ -543,6 +576,8 @@ function EBMSummary(props) {
           </h4>
           <LineChart
             data={absolute_consumption}
+            series={REGION_CONFIG}
+            highlightedSeries={highlightedRegion}
             x={{
               label: null,
               ticks: YEARS,
