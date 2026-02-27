@@ -98,7 +98,7 @@ ${signedPercentFormatter((lastcpi - d.cpi) / d.cpi)} en ${getDateDuration(d.date
       if (props.coicop !== "0") {
         const global_cpi = get_closest_point(baseline, d.date).cpi;
         const last_global_cpi = baseline[baseline.length - 1].cpi;
-        legend += `\nSur cette période, l'inflation globale est de ${signedPercentFormatter((last_global_cpi - global_cpi) / global_cpi)} (${signedPercentFormatter(averageYearlyInflation(d.date, lastDate, global_cpi, last_global_cpi))} par an)`;
+        legend += `\nInflation globale: ${signedPercentFormatter((last_global_cpi - global_cpi) / global_cpi)} (${signedPercentFormatter(averageYearlyInflation(d.date, lastDate, global_cpi, last_global_cpi))} par an) sur cette période`;
       }
 
       return legend;
